@@ -81,16 +81,43 @@ Selected: <span class="pt" id="previewCoords"></span>
 </div>
 
 <script>
-var pubs = [
+
+var pubs_key = "beerspyPubs";
+
+var default_pubs = [
 {name:"The Beat Megaclub",lat:-27.4678,lng:153.0281,price:7.50,beer:"Great Northern",suburb:"Fortitude Valley"},
 {name:"The Regatta",lat:-27.4936,lng:153.0107,price:9.00,beer:"XXXX Gold",suburb:"Toowong"},
 {name:"The Caxton",lat:-27.4626,lng:153.0089,price:11.50,beer:"Peroni",suburb:"Petrie Terrace"},
 {name:"Story Bridge Hotel",lat:-27.4667,lng:153.0369,price:8.90,beer:"Furphy",suburb:"Kangaroo Point"},
 {name:"The Fox Hotel",lat:-27.4735,lng:153.0355,price:6.90,beer:"Carlton Draught",suburb:"Woolloongabba"},
-{name:"The Norman Hotel",lat:-27.4839,lng:153.0326,price:10.20,beer:"Stone & Wood",suburb:"South Brisbane"},
+{name:"The Norman Hotel",lat:-27.4839,lng:153.0326,price:10.20,beer:"Stone & Wood",suburb:"Woolloongabba"},
 {name:"Pig 'N' Whistle",lat:-27.4699,lng:153.0258,price:12.00,beer:"James Squire",suburb:"CBD"},
 {name:"The Milton",lat:-27.4712,lng:153.0060,price:7.20,beer:"XXXX Bitter",suburb:"Milton"}
 ];
+
+function loadpubs(){
+  var raw = localStorage.getItem(pubs_key);
+  if(!raw){
+    savePubs(default_pubs);
+    return default_pubs.slice();
+  }
+  try { return JSON.parse(raw); }
+  catch(error){
+    savePubs(default_pubs);
+    return default_pubs.slice();
+  }
+}
+
+function savePubs(list){
+  var clean = list.map(function(p){
+    return {name:p.name, lat:p.lat, lng:p.lng, price:p.price, beer:p.beer, suburb:p.suburb};
+  });
+  localStorage.setItem(pubs_key, JSON.stringify(clean));
+}
+
+var pubs = loadpubs();
+
+
 
 function getPinColor(p){
   if(p<8) return '#4fae63';
@@ -491,6 +518,7 @@ document.getElementById('confirmAddPubBtn').onclick=function(){
   pendingPub.price=price;
   pendingPub.beer=beer;
   pubs.push(pendingPub);
+  savePubs(pubs);  
 
   statusEl.innerHTML='<span style="color:#4fae63">✅ '+pendingPub.name+' added to the map!</span>';
 
