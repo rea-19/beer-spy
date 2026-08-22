@@ -82,3 +82,4 @@ button.beerBtn:disabled{opacity:.4;cursor:not-allowed}
 .leaflet-tile-pane{filter:brightness(.85) saturate(1.1)}
 .leaflet-control-attribution{background:rgba(22,15,10,.8)!important;color:#f2e7d0!important}
 .leaflet-control-attribution a{color:#dd9f34!important}
+.logo {vertical-align:middle}
