@@ -4,11 +4,207 @@
 <meta charset="UTF-8" />
 <title>BeerSpy</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-<link rel="stylesheet" href="style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 <style>
-  
+  :root{
+    --stout: #150e0a;
+    --stout2: #1f1510;
+    --amber: #e0a136;
+    --amberdim: #b47f2a;
+    --foam: #f3e8d2;
+    --cheapAF: #4fae63;
+    --midtier: #e0a136;
+    --rippedOff: #d1543a;
+    --line: rgba(243,232,210,0.12);
+    --skyline: #4fb1e0;
+    --crawlPurple: #a56fd1;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--stout);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    color: var(--foam);
+  }
+  #app { display: flex; flex-direction: column; height: 100vh; }
+  header {
+    padding: 14px 20px 10px;
+    border-bottom: 2px solid var(--line);
+    display: flex; align-items: baseline; justify-content: space-between;
+    flex-wrap: wrap; gap: 8px;
+  }
+  header h1 { margin: 0; font-size: 22px; letter-spacing: 1px; color: var(--amber); text-transform: uppercase; }
+  header .tag { font-size: 12px; opacity: 0.7; font-style: italic; }
+
+  #tabBar { display: flex; background: var(--stout2); border-bottom: 2px solid var(--line); }
+  #tabBar button {
+    flex: 1; padding: 10px; border: none; background: transparent; color: var(--foam);
+    font-family: inherit; font-size: 13px; letter-spacing: 1px; text-transform: uppercase;
+    cursor: pointer; opacity: 0.6; border-bottom: 3px solid transparent;
+  }
+  #tabBar button.active { opacity: 1; border-bottom: 3px solid var(--amber); color: var(--amber); }
+
+  #findMeBar {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    padding: 10px 20px; background: var(--stout2); border-bottom: 2px solid var(--line);
+  }
+  #findMeBar input {
+    flex: 1; min-width: 160px; padding: 8px 12px; border-radius: 6px;
+    border: 1px solid var(--line); background: var(--stout); color: var(--foam);
+    font-family: inherit; font-size: 13px;
+  }
+  button.beerBtn {
+    padding: 8px 14px; border-radius: 6px; border: none; cursor: pointer;
+    background: var(--amber); color: #1a1208; font-weight: bold; font-size: 13px;
+    font-family: inherit;
+  }
+  button.beerBtn:hover { background: var(--amberdim); }
+  button.beerBtn.secondary { background: transparent; border: 1px solid var(--amberdim); color: var(--amber); }
+  button.beerBtn.purple { background: var(--crawlPurple); color: #1a1208; }
+  button.beerBtn.purple:hover { background: #8a56b3; }
+  button.beerBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+  #locStatus { font-size: 12px; opacity: 0.7; width: 100%; }
+
+  #statsBarThingy {
+    display: flex; background: var(--stout2); border-bottom: 2px solid var(--line); flex-wrap: wrap;
+  }
+  .stat { flex: 1; min-width: 140px; text-align: center; padding: 14px 10px; border-right: 1px solid var(--line); }
+  .stat:last-child { border-right: none; }
+  .stat .num { font-size: 22px; font-weight: bold; color: var(--amber); line-height: 1.1; }
+  .stat .label { font-size: 11px; letter-spacing: 1px; opacity: 0.65; text-transform: uppercase; margin-top: 4px; }
+
+  #routeLegend {
+    display: none;
+    gap: 18px; flex-wrap: wrap;
+    padding: 8px 20px; background: var(--stout2); border-bottom: 2px solid var(--line);
+    font-size: 12px;
+  }
+  #routeLegend.show { display: flex; }
+  #routeLegend .item { display: flex; align-items: center; gap: 6px; }
+  #routeLegend .swatch { width: 18px; height: 3px; border-radius: 2px; display: inline-block; }
+
+  #crawlPanel {
+    display: none;
+    padding: 10px 20px; background: var(--stout2); border-bottom: 2px solid var(--line);
+    font-size: 13px;
+  }
+  #crawlPanel.show { display: block; }
+  #crawlPanel .hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
+  #crawlPicks { display: flex; flex-wrap: wrap; gap: 8px; }
+  .crawlChip {
+    padding: 6px 10px; border-radius: 16px; border: 1px solid var(--line);
+    background: var(--stout); cursor: pointer; font-size: 12px; user-select: none;
+  }
+  .crawlChip.picked { background: var(--crawlPurple); color: #1a1208; border-color: var(--crawlPurple); font-weight: bold; }
+  .crawlChip .num { font-size: 11px; opacity: 0.8; }
+  #crawlResult { margin-top: 10px; font-size: 12px; opacity: 0.9; }
+  #crawlResult ol { margin: 6px 0 0 18px; padding: 0; }
+
+  #view-map { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  #view-pintindex { display: none; flex: 1; min-height: 0; overflow-y: auto; padding: 20px; }
+  #view-pintindex.show { display: block; }
+  #view-map.hidden { display: none; }
+
+  #map-wrap { position: relative; flex: 1; min-height: 0; }
+  #map { height: 100%; width: 100%; background: var(--stout); }
+  .legend {
+    position: absolute; bottom: 16px; left: 16px; z-index: 500;
+    background: rgba(21,14,10,0.9); border: 1px solid var(--line); border-radius: 6px;
+    padding: 10px 14px; font-size: 13px; backdrop-filter: blur(4px);
+  }
+  .legend div { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; border: 1px solid rgba(0,0,0,0.3); }
+  .pin {
+    width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--stout);
+    box-shadow: 0 0 10px 2px var(--glow-color, transparent), 0 3px 6px rgba(0,0,0,0.6);
+  }
+  .pin.hero { width: 48px; height: 48px; }
+  .pin.crawlpick { border: 3px solid var(--crawlPurple); }
+  .pin-price { transform: rotate(45deg); font-size: 12px; font-weight: bold; color: #1a1208; font-family: 'Arial', sans-serif; }
+  .pin.hero .pin-price { font-size: 14px; }
+  .badge {
+    position: absolute; top: -10px; left: -10px;
+    background: var(--stout); color: var(--foam); border: 1px solid var(--amber);
+    border-radius: 50%; width: 20px; height: 20px; font-size: 11px;
+    display: flex; align-items: center; justify-content: center;
+    transform: rotate(45deg); font-family: Arial, sans-serif; font-weight: bold;
+  }
+  .badge.crawlnum { border-color: var(--crawlPurple); background: var(--crawlPurple); color: #1a1208; }
+  .meMarker {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--skyline); border: 3px solid white;
+    box-shadow: 0 0 0 6px rgba(79,177,224,0.35), 0 2px 6px rgba(0,0,0,0.6);
+  }
+  .routeLabel {
+    background: var(--stout2); color: var(--foam); border: 1px solid var(--amberdim);
+    border-radius: 5px; padding: 2px 7px; font-size: 11px; font-weight: bold;
+    white-space: nowrap; font-family: Arial, sans-serif;
+  }
+  .leaflet-popup-content-wrapper { background: var(--stout2); color: var(--foam); border: 1px solid var(--amberdim); border-radius: 8px; }
+  .leaflet-popup-tip { background: var(--stout2); }
+  .popup-title { font-weight: bold; color: var(--amber); font-size: 15px; margin-bottom: 4px; }
+  .popup-price { font-size: 20px; font-weight: bold; }
+  .popup-meta { font-size: 12px; opacity: 0.75; margin-top: 4px; }
+  .leaflet-tile-pane { filter: brightness(0.85) saturate(1.1); }
+  .leaflet-control-attribution { background: rgba(21,14,10,0.8) !important; color: var(--foam) !important; }
+  .leaflet-control-attribution a { color: var(--amber) !important; }
+
+  #submitPanel {
+    display: none;
+    padding: 12px 20px; background: var(--stout2); border-bottom: 2px solid var(--line);
+    font-size: 13px;
+  }
+  #submitPanel.show { display: block; }
+  #submitPanel .row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  #submitPanel input {
+    padding: 8px 12px; border-radius: 6px; border: 1px solid var(--line);
+    background: var(--stout); color: var(--foam); font-family: inherit; font-size: 13px;
+  }
+  #submitPanel input.wide { flex: 1; min-width: 180px; }
+  #submitPanel input.narrow { width: 110px; }
+  #submitPreview {
+    margin-top: 8px; padding: 10px; border: 1px dashed var(--amberdim); border-radius: 6px;
+    display: none;
+  }
+  #submitPreview.show { display: block; }
+  #submitPreview .pt { font-weight: bold; color: var(--amber); }
+  #submitStatus { font-size: 12px; opacity: 0.75; margin-top: 4px; }
+
+  /* Pint Index dashboard */
+  .pi-wrap { max-width: 900px; margin: 0 auto; }
+  .pi-masthead {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    border-bottom: 3px double var(--amberdim); padding-bottom: 10px; margin-bottom: 6px; flex-wrap: wrap; gap: 8px;
+  }
+  .pi-masthead h2 { margin: 0; font-size: 26px; color: var(--amber); letter-spacing: 1px; }
+  .pi-masthead .pi-sub { font-size: 12px; opacity: 0.65; font-style: italic; }
+  .pi-date { font-size: 12px; opacity: 0.6; text-align: right; }
+  .pi-ticker {
+    background: var(--stout2); border: 1px solid var(--line); border-radius: 6px;
+    padding: 8px 14px; font-size: 12px; margin: 14px 0; overflow: hidden; white-space: nowrap;
+    font-family: 'Courier New', monospace;
+  }
+  .pi-ticker span { margin-right: 30px; }
+  .pi-up { color: var(--cheapAF); }
+  .pi-down { color: var(--rippedOff); }
+  .pi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0; }
+  .pi-card {
+    background: var(--stout2); border: 1px solid var(--line); border-radius: 8px; padding: 12px; text-align: center;
+  }
+  .pi-card .n { font-size: 20px; font-weight: bold; color: var(--amber); }
+  .pi-card .l { font-size: 10px; opacity: 0.6; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+  .pi-chart-box {
+    background: var(--stout2); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin: 16px 0;
+  }
+  .pi-chart-box h3 { margin: 0 0 12px; font-size: 14px; color: var(--amber); text-transform: uppercase; letter-spacing: 1px; }
+  .pi-analysis {
+    background: var(--stout2); border: 1px solid var(--line); border-radius: 8px; padding: 16px; font-size: 13px; line-height: 1.6;
+  }
+  .pi-analysis h3 { margin: 0 0 8px; font-size: 14px; color: var(--amber); text-transform: uppercase; letter-spacing: 1px; }
+  .pi-analysis .byline { font-size: 11px; opacity: 0.55; font-style: italic; margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -28,12 +224,33 @@
     <input id="manualAddyInput" type="text" placeholder="or type a suburb/address..." />
     <button class="beerBtn secondary" id="searchAddyBtn">Search</button>
     <button class="beerBtn purple" id="crawlModeBtn">🍻 Plan a Crawl</button>
+    <button class="beerBtn secondary" id="submitModeBtn">➕ Submit a Pub</button>
     <div id="locStatus"></div>
+  </div>
+
+  <div id="submitPanel">
+    <div class="row">
+      <input class="wide" id="subPubName" type="text" placeholder="Pub name (e.g. The Fox Hotel)" />
+      <input class="wide" id="subAddress" type="text" placeholder="Address or suburb" />
+    </div>
+    <div class="row">
+      <input class="narrow" id="subPrice" type="number" step="0.10" placeholder="Price ($)" />
+      <input class="narrow" id="subBeer" type="text" placeholder="Beer/brand" style="width:160px" />
+      <button class="beerBtn" id="findPubLocBtn">Find on Map</button>
+    </div>
+    <div id="submitPreview">
+      Found: <span class="pt" id="previewCoords"></span>
+      <div style="margin-top:6px;">
+        <button class="beerBtn" id="confirmAddPubBtn">✅ Add This Pin</button>
+        <button class="beerBtn secondary" id="cancelAddPubBtn">Cancel</button>
+      </div>
+    </div>
+    <div id="submitStatus"></div>
   </div>
 
   <div id="crawlPanel">
     <div class="hdr">
-      <strong>Pick 3 to 4 pubs for your crawl</strong>
+      <strong>Pick 3–4 pubs for your crawl</strong>
       <div>
         <button class="beerBtn purple" id="optimizeCrawlBtn" disabled>Optimize Route</button>
         <button class="beerBtn secondary" id="clearCrawlBtn">Clear</button>
@@ -55,7 +272,7 @@
       <div id="map"></div>
       <div class="legend">
         <div><span class="dot" style="background:var(--cheapAF)"></span> Under $8</div>
-        <div><span class="dot" style="background:var(--midtier)"></span> $8 - $10</div>
+        <div><span class="dot" style="background:var(--midtier)"></span> $8 – $10</div>
         <div><span class="dot" style="background:var(--rippedOff)"></span> Over $10</div>
       </div>
     </div>
@@ -346,7 +563,7 @@ async function doAddressSearch() {
   }
 }
 
-
+// ---------- Pub crawl planner ----------
 
 const crawlPanel = document.getElementById('crawlPanel');
 const crawlModeBtn = document.getElementById('crawlModeBtn');
@@ -472,6 +689,83 @@ optimizeCrawlBtn.addEventListener('click', async () => {
   } catch (e) {
     resultEl.innerHTML = `<span style="color:var(--rippedOff)">couldn't reach the routing service — try again in a sec</span>`;
   }
+});
+
+// ---------- Submit a pub ----------
+
+const submitPanel = document.getElementById('submitPanel');
+const submitModeBtn = document.getElementById('submitModeBtn');
+let pendingNewPub = null;
+
+submitModeBtn.addEventListener('click', () => {
+  const showing = submitPanel.classList.toggle('show');
+  submitModeBtn.textContent = showing ? '➕ Cancel' : '➕ Submit a Pub';
+  if (!showing) resetSubmitForm();
+});
+
+function resetSubmitForm() {
+  pendingNewPub = null;
+  document.getElementById('submitPreview').classList.remove('show');
+  document.getElementById('submitStatus').textContent = '';
+}
+
+document.getElementById('findPubLocBtn').addEventListener('click', async () => {
+  const name = document.getElementById('subPubName').value.trim();
+  const addr = document.getElementById('subAddress').value.trim();
+  const price = parseFloat(document.getElementById('subPrice').value);
+  const beer = document.getElementById('subBeer').value.trim() || 'Unlisted';
+  const statusEl = document.getElementById('submitStatus');
+
+  if (!name || !addr) { statusEl.textContent = 'need at least a pub name and an address to search'; return; }
+  if (isNaN(price) || price <= 0) { statusEl.textContent = 'enter a valid price'; return; }
+
+  statusEl.textContent = 'looking up that address...';
+  document.getElementById('submitPreview').classList.remove('show');
+
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(addr + ', Brisbane, Australia')}`);
+    const data = await res.json();
+    if (!data.length) { statusEl.textContent = "couldn't find that address — try adding a suburb"; return; }
+
+    const lat = parseFloat(data[0].lat);
+    const lng = parseFloat(data[0].lon);
+    const suburb = (data[0].display_name || '').split(',')[1]?.trim() || 'Brisbane';
+
+    pendingNewPub = { name, lat, lng, price, beer, suburb };
+
+    document.getElementById('previewCoords').textContent = `${name} — ${lat.toFixed(4)}, ${lng.toFixed(4)} (${suburb})`;
+    document.getElementById('submitPreview').classList.add('show');
+    statusEl.textContent = 'found it — confirm to drop the pin';
+  } catch (e) {
+    statusEl.textContent = 'lookup failed, try again';
+  }
+});
+
+document.getElementById('cancelAddPubBtn').addEventListener('click', resetSubmitForm);
+
+document.getElementById('confirmAddPubBtn').addEventListener('click', () => {
+  if (!pendingNewPub) return;
+  pubsWeCalled.push(pendingNewPub);
+
+  const priceArr = pubsWeCalled.map(p => p.price);
+  const newAvg = (priceArr.reduce((a, b) => a + b, 0) / priceArr.length).toFixed(2);
+  const newMin = Math.min(...priceArr).toFixed(2);
+  const newMax = Math.max(...priceArr).toFixed(2);
+
+  document.getElementById('submitStatus').innerHTML = `<span style="color:var(--cheapAF)">✅ ${pendingNewPub.name} added to the map!</span>`;
+
+  drawPubPins();
+  map.panTo([pendingNewPub.lat, pendingNewPub.lng]);
+  renderCrawlPicks();
+
+  document.getElementById('subPubName').value = '';
+  document.getElementById('subAddress').value = '';
+  document.getElementById('subPrice').value = '';
+  document.getElementById('subBeer').value = '';
+  document.getElementById('submitPreview').classList.remove('show');
+
+  window._piDirty = true;
+  pendingNewPub = null;
 });
 
 // ---------- Tabs ----------
