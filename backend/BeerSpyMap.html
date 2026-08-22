@@ -717,7 +717,7 @@ document.getElementById('findPubLocBtn').addEventListener('click', async () => {
   const statusEl = document.getElementById('submitStatus');
 
   if (!name || !addr) { statusEl.textContent = 'need at least a pub name and an address to search'; return; }
-  if (isNaN(price) || price <= 0) { statusEl.textContent = 'enter a valid price'; return; }
+  if (isNaN(price) || price <= 0 || price > 30) { statusEl.textContent = 'enter a valid price'; return; }
 
   statusEl.textContent = 'looking up that address...';
   document.getElementById('submitPreview').classList.remove('show');
