@@ -4,875 +4,505 @@
 <meta charset="UTF-8" />
 <title>BeerSpy</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<link rel="stylesheet" href="style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 <style>
-  :root{
-    --stout: #150e0a;
-    --stout2: #1f1510;
-    --amber: #e0a136;
-    --amberdim: #b47f2a;
-    --foam: #f3e8d2;
-    --cheapAF: #4fae63;
-    --midtier: #e0a136;
-    --rippedOff: #d1543a;
-    --line: rgba(243,232,210,0.12);
-    --skyline: #4fb1e0;
-    --crawlPurple: #a56fd1;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--stout);
-    font-family: 'Georgia', 'Times New Roman', serif;
-    color: var(--foam);
-  }
-  #app { display: flex; flex-direction: column; height: 100vh; }
-  header {
-    padding: 14px 20px 10px;
-    border-bottom: 2px solid var(--line);
-    display: flex; align-items: baseline; justify-content: space-between;
-    flex-wrap: wrap; gap: 8px;
-  }
-  header h1 { margin: 0; font-size: 22px; letter-spacing: 1px; color: var(--amber); text-transform: uppercase; }
-  header .tag { font-size: 12px; opacity: 0.7; font-style: italic; }
 
-  #tabBar { display: flex; background: var(--stout2); border-bottom: 2px solid var(--line); }
-  #tabBar button {
-    flex: 1; padding: 10px; border: none; background: transparent; color: var(--foam);
-    font-family: inherit; font-size: 13px; letter-spacing: 1px; text-transform: uppercase;
-    cursor: pointer; opacity: 0.6; border-bottom: 3px solid transparent;
-  }
-  #tabBar button.active { opacity: 1; border-bottom: 3px solid var(--amber); color: var(--amber); }
-
-  #findMeBar {
-    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
-    padding: 10px 20px; background: var(--stout2); border-bottom: 2px solid var(--line);
-  }
-  #findMeBar input {
-    flex: 1; min-width: 160px; padding: 8px 12px; border-radius: 6px;
-    border: 1px solid var(--line); background: var(--stout); color: var(--foam);
-    font-family: inherit; font-size: 13px;
-  }
-  button.beerBtn {
-    padding: 8px 14px; border-radius: 6px; border: none; cursor: pointer;
-    background: var(--amber); color: #1a1208; font-weight: bold; font-size: 13px;
-    font-family: inherit;
-  }
-  button.beerBtn:hover { background: var(--amberdim); }
-  button.beerBtn.secondary { background: transparent; border: 1px solid var(--amberdim); color: var(--amber); }
-  button.beerBtn.purple { background: var(--crawlPurple); color: #1a1208; }
-  button.beerBtn.purple:hover { background: #8a56b3; }
-  button.beerBtn:disabled { opacity: 0.4; cursor: not-allowed; }
-  #locStatus { font-size: 12px; opacity: 0.7; width: 100%; }
-
-  #statsBarThingy {
-    display: flex; background: var(--stout2); border-bottom: 2px solid var(--line); flex-wrap: wrap;
-  }
-  .stat { flex: 1; min-width: 140px; text-align: center; padding: 14px 10px; border-right: 1px solid var(--line); }
-  .stat:last-child { border-right: none; }
-  .stat .num { font-size: 22px; font-weight: bold; color: var(--amber); line-height: 1.1; }
-  .stat .label { font-size: 11px; letter-spacing: 1px; opacity: 0.65; text-transform: uppercase; margin-top: 4px; }
-
-  #routeLegend {
-    display: none;
-    gap: 18px; flex-wrap: wrap;
-    padding: 8px 20px; background: var(--stout2); border-bottom: 2px solid var(--line);
-    font-size: 12px;
-  }
-  #routeLegend.show { display: flex; }
-  #routeLegend .item { display: flex; align-items: center; gap: 6px; }
-  #routeLegend .swatch { width: 18px; height: 3px; border-radius: 2px; display: inline-block; }
-
-  #crawlPanel {
-    display: none;
-    padding: 10px 20px; background: var(--stout2); border-bottom: 2px solid var(--line);
-    font-size: 13px;
-  }
-  #crawlPanel.show { display: block; }
-  #crawlPanel .hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
-  #crawlPicks { display: flex; flex-wrap: wrap; gap: 8px; }
-  .crawlChip {
-    padding: 6px 10px; border-radius: 16px; border: 1px solid var(--line);
-    background: var(--stout); cursor: pointer; font-size: 12px; user-select: none;
-  }
-  .crawlChip.picked { background: var(--crawlPurple); color: #1a1208; border-color: var(--crawlPurple); font-weight: bold; }
-  .crawlChip .num { font-size: 11px; opacity: 0.8; }
-  #crawlResult { margin-top: 10px; font-size: 12px; opacity: 0.9; }
-  #crawlResult ol { margin: 6px 0 0 18px; padding: 0; }
-
-  #view-map { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-  #view-pintindex { display: none; flex: 1; min-height: 0; overflow-y: auto; padding: 20px; }
-  #view-pintindex.show { display: block; }
-  #view-map.hidden { display: none; }
-
-  #map-wrap { position: relative; flex: 1; min-height: 0; }
-  #map { height: 100%; width: 100%; background: var(--stout); }
-  .legend {
-    position: absolute; bottom: 16px; left: 16px; z-index: 500;
-    background: rgba(21,14,10,0.9); border: 1px solid var(--line); border-radius: 6px;
-    padding: 10px 14px; font-size: 13px; backdrop-filter: blur(4px);
-  }
-  .legend div { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
-  .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; border: 1px solid rgba(0,0,0,0.3); }
-  .pin {
-    width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
-    display: flex; align-items: center; justify-content: center;
-    border: 2px solid var(--stout);
-    box-shadow: 0 0 10px 2px var(--glow-color, transparent), 0 3px 6px rgba(0,0,0,0.6);
-  }
-  .pin.hero { width: 48px; height: 48px; }
-  .pin.crawlpick { border: 3px solid var(--crawlPurple); }
-  .pin-price { transform: rotate(45deg); font-size: 12px; font-weight: bold; color: #1a1208; font-family: 'Arial', sans-serif; }
-  .pin.hero .pin-price { font-size: 14px; }
-  .badge {
-    position: absolute; top: -10px; left: -10px;
-    background: var(--stout); color: var(--foam); border: 1px solid var(--amber);
-    border-radius: 50%; width: 20px; height: 20px; font-size: 11px;
-    display: flex; align-items: center; justify-content: center;
-    transform: rotate(45deg); font-family: Arial, sans-serif; font-weight: bold;
-  }
-  .badge.crawlnum { border-color: var(--crawlPurple); background: var(--crawlPurple); color: #1a1208; }
-  .meMarker {
-    width: 20px; height: 20px; border-radius: 50%;
-    background: var(--skyline); border: 3px solid white;
-    box-shadow: 0 0 0 6px rgba(79,177,224,0.35), 0 2px 6px rgba(0,0,0,0.6);
-  }
-  .routeLabel {
-    background: var(--stout2); color: var(--foam); border: 1px solid var(--amberdim);
-    border-radius: 5px; padding: 2px 7px; font-size: 11px; font-weight: bold;
-    white-space: nowrap; font-family: Arial, sans-serif;
-  }
-  .leaflet-popup-content-wrapper { background: var(--stout2); color: var(--foam); border: 1px solid var(--amberdim); border-radius: 8px; }
-  .leaflet-popup-tip { background: var(--stout2); }
-  .popup-title { font-weight: bold; color: var(--amber); font-size: 15px; margin-bottom: 4px; }
-  .popup-price { font-size: 20px; font-weight: bold; }
-  .popup-meta { font-size: 12px; opacity: 0.75; margin-top: 4px; }
-  .leaflet-tile-pane { filter: brightness(0.85) saturate(1.1); }
-  .leaflet-control-attribution { background: rgba(21,14,10,0.8) !important; color: var(--foam) !important; }
-  .leaflet-control-attribution a { color: var(--amber) !important; }
-
-  #submitPanel {
-    display: none;
-    padding: 12px 20px; background: var(--stout2); border-bottom: 2px solid var(--line);
-    font-size: 13px;
-  }
-  #submitPanel.show { display: block; }
-  #submitPanel .row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
-  #submitPanel input {
-    padding: 8px 12px; border-radius: 6px; border: 1px solid var(--line);
-    background: var(--stout); color: var(--foam); font-family: inherit; font-size: 13px;
-  }
-  #submitPanel input.wide { flex: 1; min-width: 180px; }
-  #submitPanel input.narrow { width: 110px; }
-  #submitPreview {
-    margin-top: 8px; padding: 10px; border: 1px dashed var(--amberdim); border-radius: 6px;
-    display: none;
-  }
-  #submitPreview.show { display: block; }
-  #submitPreview .pt { font-weight: bold; color: var(--amber); }
-  #submitStatus { font-size: 12px; opacity: 0.75; margin-top: 4px; }
-
-  /* Pint Index dashboard */
-  .pi-wrap { max-width: 900px; margin: 0 auto; }
-  .pi-masthead {
-    display: flex; justify-content: space-between; align-items: flex-end;
-    border-bottom: 3px double var(--amberdim); padding-bottom: 10px; margin-bottom: 6px; flex-wrap: wrap; gap: 8px;
-  }
-  .pi-masthead h2 { margin: 0; font-size: 26px; color: var(--amber); letter-spacing: 1px; }
-  .pi-masthead .pi-sub { font-size: 12px; opacity: 0.65; font-style: italic; }
-  .pi-date { font-size: 12px; opacity: 0.6; text-align: right; }
-  .pi-ticker {
-    background: var(--stout2); border: 1px solid var(--line); border-radius: 6px;
-    padding: 8px 14px; font-size: 12px; margin: 14px 0; overflow: hidden; white-space: nowrap;
-    font-family: 'Courier New', monospace;
-  }
-  .pi-ticker span { margin-right: 30px; }
-  .pi-up { color: var(--cheapAF); }
-  .pi-down { color: var(--rippedOff); }
-  .pi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0; }
-  .pi-card {
-    background: var(--stout2); border: 1px solid var(--line); border-radius: 8px; padding: 12px; text-align: center;
-  }
-  .pi-card .n { font-size: 20px; font-weight: bold; color: var(--amber); }
-  .pi-card .l { font-size: 10px; opacity: 0.6; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
-  .pi-chart-box {
-    background: var(--stout2); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin: 16px 0;
-  }
-  .pi-chart-box h3 { margin: 0 0 12px; font-size: 14px; color: var(--amber); text-transform: uppercase; letter-spacing: 1px; }
-  .pi-analysis {
-    background: var(--stout2); border: 1px solid var(--line); border-radius: 8px; padding: 16px; font-size: 13px; line-height: 1.6;
-  }
-  .pi-analysis h3 { margin: 0 0 8px; font-size: 14px; color: var(--amber); text-transform: uppercase; letter-spacing: 1px; }
-  .pi-analysis .byline { font-size: 11px; opacity: 0.55; font-style: italic; margin-top: 10px; }
 </style>
 </head>
 <body>
 <div id="app">
-  <header>
-    <h1>🍺 BeerSpy — Brisbane</h1>
-    <span class="tag">cheapest pints, spied on your behalf</span>
-  </header>
 
-  <div id="tabBar">
-    <button id="tabMapBtn" class="active">🗺️ Map</button>
-    <button id="tabPiBtn">📈 The Pint Index</button>
-  </div>
+<header>
+<h1>🍺 BeerSpy — Brisbane</h1>
+<span class="tag">cheapest pints, spied on your behalf</span>
+</header>
 
-  <div id="findMeBar">
-    <button class="beerBtn" id="useMyLocationBtn">📍 Find Near Me</button>
-    <input id="manualAddyInput" type="text" placeholder="or type a suburb/address..." />
-    <button class="beerBtn secondary" id="searchAddyBtn">Search</button>
-    <button class="beerBtn purple" id="crawlModeBtn">🍻 Plan a Crawl</button>
-    <button class="beerBtn secondary" id="submitModeBtn">➕ Submit a Pub</button>
-    <div id="locStatus"></div>
-  </div>
+<div id="findMeBar">
+<button class="beerBtn" id="useMyLocationBtn">📍 Find Near Me</button>
+<input id="manualAddyInput" type="text" placeholder="or type a suburb/address..." />
+<button class="beerBtn secondary" id="searchAddyBtn">Search</button>
+<button class="beerBtn purple" id="crawlModeBtn">🍻 Plan a Crawl</button>
+<button class="beerBtn secondary" id="submitModeBtn">➕ Submit a Pub</button>
+<div id="locStatus"></div>
+</div>
 
-  <div id="submitPanel">
-    <div class="row">
-      <input class="wide" id="subPubName" type="text" placeholder="Pub name (e.g. The Fox Hotel)" />
-      <input class="wide" id="subAddress" type="text" placeholder="Address or suburb" />
-    </div>
-    <div class="row">
-      <input class="narrow" id="subPrice" type="number" step="0.10" placeholder="Price ($)" />
-      <input class="narrow" id="subBeer" type="text" placeholder="Beer/brand" style="width:160px" />
-      <button class="beerBtn" id="findPubLocBtn">Find on Map</button>
-    </div>
-    <div id="submitPreview">
-      Found: <span class="pt" id="previewCoords"></span>
-      <div style="margin-top:6px;">
-        <button class="beerBtn" id="confirmAddPubBtn">✅ Add This Pin</button>
-        <button class="beerBtn secondary" id="cancelAddPubBtn">Cancel</button>
-      </div>
-    </div>
-    <div id="submitStatus"></div>
-  </div>
+<div id="submitPanel">
+<div class="row">
+<div class="searchWrap">
+<input class="wide" id="subPubSearch" type="text" placeholder="Start typing a pub name (e.g. Story Bridge Hotel)..." autocomplete="off" />
+<div id="pubSearchDropdown"></div>
+</div>
+</div>
+<div class="row">
+<input class="narrow" id="subPrice" type="number" step="0.10" placeholder="Price ($)" />
+<input class="narrow" id="subBeer" type="text" placeholder="Beer/brand" style="width:160px" />
+</div>
+<div id="submitPreview">
+Selected: <span class="pt" id="previewCoords"></span>
+<div style="margin-top:6px">
+<button class="beerBtn" id="confirmAddPubBtn">✅ Add This Pin</button>
+<button class="beerBtn secondary" id="cancelAddPubBtn">Cancel</button>
+</div>
+</div>
+<div id="submitStatus"></div>
+</div>
 
-  <div id="crawlPanel">
-    <div class="hdr">
-      <strong>Pick 3–4 pubs for your crawl</strong>
-      <div>
-        <button class="beerBtn purple" id="optimizeCrawlBtn" disabled>Optimize Route</button>
-        <button class="beerBtn secondary" id="clearCrawlBtn">Clear</button>
-      </div>
-    </div>
-    <div id="crawlPicks"></div>
-    <div id="crawlResult"></div>
-  </div>
+<div id="crawlPanel">
+<div class="hdr">
+<strong>Pick 3–4 pubs for your crawl</strong>
+<div>
+<button class="beerBtn purple" id="optimizeCrawlBtn" disabled>Optimize Route</button>
+<button class="beerBtn secondary" id="clearCrawlBtn">Clear</button>
+</div>
+</div>
+<div id="crawlPicks"></div>
+<div id="crawlResult"></div>
+</div>
 
-  <div id="statsBarThingy"></div>
+<div id="statsBarThingy"></div>
 
-  <div id="routeLegend">
-    <div class="item"><span class="swatch" style="background:#4fb1e0"></span> Route to nearest pub (1)</div>
-    <div class="item"><span class="swatch" style="background:#4fae63"></span> Route to nearest cheap pub</div>
-  </div>
+<div id="routeLegend">
+<div class="item"><span class="swatch" style="background:#4fb1e0"></span> Route to nearest pub (1)</div>
+<div class="item"><span class="swatch" style="background:#4fae63"></span> Route to nearest cheap pub</div>
+</div>
 
-  <div id="view-map">
-    <div id="map-wrap">
-      <div id="map"></div>
-      <div class="legend">
-        <div><span class="dot" style="background:var(--cheapAF)"></span> Under $8</div>
-        <div><span class="dot" style="background:var(--midtier)"></span> $8 – $10</div>
-        <div><span class="dot" style="background:var(--rippedOff)"></span> Over $10</div>
-      </div>
-    </div>
-  </div>
+<div id="map-wrap">
+<div id="map"></div>
+<div class="legend">
+<div><span class="dot" style="background:#4fae63"></span> Under $8</div>
+<div><span class="dot" style="background:#dd9f34"></span> $8 – $10</div>
+<div><span class="dot" style="background:#d1543a"></span> Over $10</div>
+</div>
+</div>
 
-  <div id="view-pintindex">
-    <div class="pi-wrap">
-      <div class="pi-masthead">
-        <div>
-          <h2>THE PINT INDEX</h2>
-          <div class="pi-sub">Queensland Amber Ale &amp; Lager Futures Desk</div>
-        </div>
-        <div class="pi-date" id="piDate"></div>
-      </div>
-
-      <div class="pi-ticker" id="piTicker"></div>
-
-      <div class="pi-grid" id="piStatGrid"></div>
-
-      <div class="pi-chart-box">
-        <h3>Brisbane Schooner Composite — 12 Month Trend</h3>
-        <canvas id="piChart" height="90"></canvas>
-      </div>
-
-      <div class="pi-chart-box">
-        <h3>Suburb Volatility Index</h3>
-        <canvas id="piBarChart" height="90"></canvas>
-      </div>
-
-      <div class="pi-analysis">
-        <h3>Market Commentary</h3>
-        <p id="piCommentary"></p>
-        <div class="byline">Figures are illustrative estimates for demonstration purposes and do not constitute financial advice on beer.</div>
-      </div>
-    </div>
-  </div>
 </div>
 
 <script>
-const pubsWeCalled = [
-  { name: "The Beat Megaclub",     lat: -27.4678, lng: 153.0281, price: 7.50,  beer: "Great Northern",     suburb: "Fortitude Valley" },
-  { name: "The Regatta",           lat: -27.4936, lng: 153.0107, price: 9.00,  beer: "XXXX Gold",          suburb: "Toowong" },
-  { name: "The Caxton",            lat: -27.4626, lng: 153.0089, price: 11.50, beer: "Peroni",             suburb: "Petrie Terrace" },
-  { name: "Story Bridge Hotel",    lat: -27.4667, lng: 153.0369, price: 8.90,  beer: "Furphy",             suburb: "Kangaroo Point" },
-  { name: "The Fox Hotel",         lat: -27.4735, lng: 153.0355, price: 6.90,  beer: "Carlton Draught",    suburb: "Woolloongabba" },
-  { name: "The Norman Hotel",      lat: -27.4839, lng: 153.0326, price: 10.20, beer: "Stone & Wood",       suburb: "South Brisbane" },
-  { name: "Pig 'N' Whistle",       lat: -27.4699, lng: 153.0258, price: 12.00, beer: "James Squire",       suburb: "CBD" },
-  { name: "The Milton",            lat: -27.4712, lng: 153.0060, price: 7.20,  beer: "XXXX Bitter",        suburb: "Milton" },
+var pubs = [
+{name:"The Beat Megaclub",lat:-27.4678,lng:153.0281,price:7.50,beer:"Great Northern",suburb:"Fortitude Valley"},
+{name:"The Regatta",lat:-27.4936,lng:153.0107,price:9.00,beer:"XXXX Gold",suburb:"Toowong"},
+{name:"The Caxton",lat:-27.4626,lng:153.0089,price:11.50,beer:"Peroni",suburb:"Petrie Terrace"},
+{name:"Story Bridge Hotel",lat:-27.4667,lng:153.0369,price:8.90,beer:"Furphy",suburb:"Kangaroo Point"},
+{name:"The Fox Hotel",lat:-27.4735,lng:153.0355,price:6.90,beer:"Carlton Draught",suburb:"Woolloongabba"},
+{name:"The Norman Hotel",lat:-27.4839,lng:153.0326,price:10.20,beer:"Stone & Wood",suburb:"South Brisbane"},
+{name:"Pig 'N' Whistle",lat:-27.4699,lng:153.0258,price:12.00,beer:"James Squire",suburb:"CBD"},
+{name:"The Milton",lat:-27.4712,lng:153.0060,price:7.20,beer:"XXXX Bitter",suburb:"Milton"}
 ];
 
-function whatColorAmI(p) {
-  if (p < 8) return getComputedStyle(document.documentElement).getPropertyValue('--cheapAF').trim();
-  if (p <= 10) return getComputedStyle(document.documentElement).getPropertyValue('--midtier').trim();
-  return getComputedStyle(document.documentElement).getPropertyValue('--rippedOff').trim();
+function getPinColor(p){
+  if(p<8) return '#4fae63';
+  if(p<=10) return '#dd9f34';
+  return '#d1543a';
 }
 
-function distanceInKm(lat1, lng1, lat2, lng2) {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+function kmBetween(lat1,lng1,lat2,lng2){
+  var R=6371;
+  var dLat=(lat2-lat1)*Math.PI/180;
+  var dLng=(lng2-lng1)*Math.PI/180;
+  var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
-const priceList = pubsWeCalled.map(p => p.price);
-const avgPint = (priceList.reduce((a, b) => a + b, 0) / priceList.length).toFixed(2);
-const cheapestBoi = Math.min(...priceList).toFixed(2);
-const mostExpensiveL = Math.max(...priceList).toFixed(2);
-const rangeOfPain = (mostExpensiveL - cheapestBoi).toFixed(2);
+function refreshStats(extra){
+  var prices=pubs.map(function(p){return p.price});
+  var sum=0;
+  for(var i=0;i<prices.length;i++) sum+=prices[i];
+  var avg=(sum/prices.length).toFixed(2);
+  var lo=Math.min.apply(null,prices).toFixed(2);
+  var hi=Math.max.apply(null,prices).toFixed(2);
+  var range=(hi-lo).toFixed(2);
 
-function paintStats(extraBlocks) {
-  const statBlocks = [
-    { num: `$${avgPint}`, label: "Brisbane Average" },
-    { num: `$${cheapestBoi}`, label: "Cheapest Found" },
-    { num: `${pubsWeCalled.length}`, label: "Venues Tracked" },
-    { num: `$${rangeOfPain}`, label: "Price Range" },
+  var blocks=[
+    {num:'$'+avg,label:'Brisbane Average'},
+    {num:'$'+lo,label:'Cheapest Found'},
+    {num:pubs.length,label:'Venues Tracked'},
+    {num:'$'+range,label:'Price Range'}
   ];
-  const blocks = extraBlocks ? [...extraBlocks, ...statBlocks] : statBlocks;
-  document.getElementById('statsBarThingy').innerHTML = blocks.map(s => `
-    <div class="stat">
-      <div class="num">${s.num}</div>
-      <div class="label">${s.label}</div>
-    </div>
-  `).join('');
+  if(extra) blocks=extra.concat(blocks);
+
+  var html='';
+  for(var j=0;j<blocks.length;j++){
+    html+='<div class="stat"><div class="num">'+blocks[j].num+'</div><div class="label">'+blocks[j].label+'</div></div>';
+  }
+  document.getElementById('statsBarThingy').innerHTML=html;
 }
-paintStats();
+refreshStats();
 
-let latSum = 0, lngSum = 0;
-for (const p of pubsWeCalled) { latSum += p.lat; lngSum += p.lng; }
-const middleOfBrisbaneIsh = [latSum / pubsWeCalled.length, lngSum / pubsWeCalled.length];
+var latTotal=0,lngTotal=0;
+pubs.forEach(function(p){latTotal+=p.lat;lngTotal+=p.lng});
+var center=[latTotal/pubs.length,lngTotal/pubs.length];
 
-const map = L.map('map', { zoomControl: true }).setView(middleOfBrisbaneIsh, 13);
-
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-  maxZoom: 20,
-  subdomains: 'abcd'
+var map=L.map('map',{zoomControl:true}).setView(center,13);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+  attribution:'&copy; OpenStreetMap contributors &copy; CARTO',
+  maxZoom:20,subdomains:'abcd'
 }).addTo(map);
 
-let pubMarkers = [];
-let meMarker = null;
-let routeLines = [];
-let routeLabels = [];
-let myLastLoc = null;
+var pubMarkers=[],meMarker=null,routeLines=[],routeLabels=[],myLoc=null,crawlOn=false,crawlPicked=[];
 
-let crawlModeOn = false;
-let crawlPicked = [];
+function drawPins(heroes){
+  pubMarkers.forEach(function(m){map.removeLayer(m)});
+  pubMarkers=[];
+  var bounds=[];
+  heroes=heroes||{};
 
-function drawPubPins(heroIds) {
-  pubMarkers.forEach(m => map.removeLayer(m));
-  pubMarkers = [];
-  const boundsBoxThing = [];
-  heroIds = heroIds || {};
+  pubs.forEach(function(pub){
+    var col=getPinColor(pub.price);
+    var isNear=heroes.nearest===pub;
+    var isCheap=heroes.cheapest===pub;
+    var crawlIdx=crawlPicked.indexOf(pub);
+    var picked=crawlIdx!==-1;
+    var hero=isNear||isCheap;
 
-  for (const pub of pubsWeCalled) {
-    const col = whatColorAmI(pub.price);
-    const isNearest = heroIds.nearest === pub;
-    const isCheapest = heroIds.cheapest === pub;
-    const crawlIdx = crawlPicked.indexOf(pub);
-    const isCrawlPick = crawlIdx !== -1;
-    const hero = isNearest || isCheapest;
+    var badge='';
+    if(picked) badge='<div class="badge crawlnum">'+(crawlIdx+1)+'</div>';
+    else if(isNear) badge='<div class="badge">1</div>';
+    else if(isCheap) badge='<div class="badge">$</div>';
 
-    let badge = '';
-    if (isCrawlPick) badge = `<div class="badge crawlnum">${crawlIdx + 1}</div>`;
-    else if (isNearest) badge = '<div class="badge">1</div>';
-    else if (isCheapest) badge = '<div class="badge">$</div>';
-
-    const fancyIcon = L.divIcon({
-      className: '',
-      html: `<div style="position:relative;">
-               <div class="pin ${hero ? 'hero' : ''} ${isCrawlPick ? 'crawlpick' : ''}" style="background:${col}; --glow-color:${col}66;">
-                 <span class="pin-price">$${Math.round(pub.price)}</span>
-               </div>
-               ${badge}
-             </div>`,
-      iconSize: hero ? [48, 48] : [40, 40],
-      iconAnchor: hero ? [24, 48] : [20, 40],
-      popupAnchor: [0, -40]
+    var icon=L.divIcon({
+      className:'',
+      html:'<div style="position:relative"><div class="pin '+(hero?'hero ':'')+(picked?'crawlpick':'')+'" style="background:'+col+';--glow-color:'+col+'66"><span class="pin-price">$'+Math.round(pub.price)+'</span></div>'+badge+'</div>',
+      iconSize:hero?[48,48]:[40,40],
+      iconAnchor:hero?[24,48]:[20,40],
+      popupAnchor:[0,-40]
     });
 
-    const distTxt = pub._dist != null ? `${pub._dist.toFixed(1)} km away` : '';
-    const m = L.marker([pub.lat, pub.lng], { icon: fancyIcon }).addTo(map);
-    m.bindPopup(`
-      <div class="popup-title">${pub.name}</div>
-      <div class="popup-price">$${pub.price.toFixed(2)}</div>
-      <div class="popup-meta">${pub.beer} · ${pub.suburb}${distTxt ? ' · ' + distTxt : ''}</div>
-    `);
-    m.on('click', () => { if (crawlModeOn) toggleCrawlPick(pub); });
-    pubMarkers.push(m);
-    boundsBoxThing.push([pub.lat, pub.lng]);
-  }
-  return boundsBoxThing;
-}
-
-let initialBounds = drawPubPins();
-if (initialBounds.length) map.fitBounds(initialBounds, { padding: [40, 40] });
-
-function dropMeMarker(lat, lng) {
-  if (meMarker) map.removeLayer(meMarker);
-  meMarker = L.marker([lat, lng], {
-    icon: L.divIcon({ className: '', html: `<div class="meMarker"></div>`, iconSize: [20, 20], iconAnchor: [10, 10] })
-  }).addTo(map);
-}
-
-function clearRoutes() {
-  routeLines.forEach(l => map.removeLayer(l));
-  routeLines = [];
-  routeLabels.forEach(l => map.removeLayer(l));
-  routeLabels = [];
-}
-
-async function fetchWalkingRoute(fromLat, fromLng, toLat, toLng) {
-  const url = `https://router.project-osrm.org/route/v1/foot/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson`;
-  const res = await fetch(url);
-  const data = await res.json();
-  if (!data.routes || !data.routes.length) throw new Error('no route back');
-  const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-  const km = data.routes[0].distance / 1000;
-  return { coords, km };
-}
-
-async function drawRouteLine(fromLat, fromLng, toPub, color, midOffset) {
-  let coords, km;
-  try {
-    const r = await fetchWalkingRoute(fromLat, fromLng, toPub.lat, toPub.lng);
-    coords = r.coords;
-    km = r.km;
-  } catch (e) {
-    coords = [[fromLat, fromLng], [toPub.lat, toPub.lng]];
-    km = distanceInKm(fromLat, fromLng, toPub.lat, toPub.lng);
-  }
-
-  const line = L.polyline(coords, { color, weight: 4, opacity: 0.85, dashArray: '1, 8', lineCap: 'round' }).addTo(map);
-  routeLines.push(line);
-
-  const midIdx = Math.floor(coords.length / 2);
-  const midPoint = coords[midIdx] || coords[0];
-  const labelIcon = L.divIcon({
-    className: '',
-    html: `<div class="routeLabel" style="border-color:${color}">${km.toFixed(1)} km</div>`,
-    iconSize: [60, 20],
-    iconAnchor: [30, midOffset ? 30 : 0]
+    var distTxt=pub._dist!=null ? pub._dist.toFixed(1)+' km away' : '';
+    var mk=L.marker([pub.lat,pub.lng],{icon:icon}).addTo(map);
+    mk.bindPopup('<div class="popup-title">'+pub.name+'</div><div class="popup-price">$'+pub.price.toFixed(2)+'</div><div class="popup-meta">'+pub.beer+' · '+pub.suburb+(distTxt?' · '+distTxt:'')+'</div>');
+    mk.on('click',function(){ if(crawlOn) toggleCrawl(pub) });
+    pubMarkers.push(mk);
+    bounds.push([pub.lat,pub.lng]);
   });
-  const label = L.marker(midPoint, { icon: labelIcon, interactive: false }).addTo(map);
-  routeLabels.push(label);
-
-  return km;
+  return bounds;
 }
 
-async function handleNewLocation(lat, lng, labelText) {
-  myLastLoc = [lat, lng];
-  dropMeMarker(lat, lng);
+var initBounds=drawPins();
+if(initBounds.length) map.fitBounds(initBounds,{padding:[40,40]});
+
+function dropMe(lat,lng){
+  if(meMarker) map.removeLayer(meMarker);
+  meMarker=L.marker([lat,lng],{icon:L.divIcon({className:'',html:'<div class="meMarker"></div>',iconSize:[20,20],iconAnchor:[10,10]})}).addTo(map);
+}
+
+function clearRoutes(){
+  routeLines.forEach(function(l){map.removeLayer(l)});
+  routeLines=[];
+  routeLabels.forEach(function(l){map.removeLayer(l)});
+  routeLabels=[];
+}
+
+function fetchRoute(fromLat,fromLng,toLat,toLng){
+  var url='https://router.project-osrm.org/route/v1/foot/'+fromLng+','+fromLat+';'+toLng+','+toLat+'?overview=full&geometries=geojson';
+  return fetch(url).then(function(res){return res.json()}).then(function(data){
+    if(!data.routes || !data.routes.length) throw 'no route';
+    var coords=data.routes[0].geometry.coordinates.map(function(c){return [c[1],c[0]]});
+    return {coords:coords, km:data.routes[0].distance/1000};
+  });
+}
+
+function drawRoute(fromLat,fromLng,toPub,color,offset){
+  return fetchRoute(fromLat,fromLng,toPub.lat,toPub.lng).catch(function(){
+    return {coords:[[fromLat,fromLng],[toPub.lat,toPub.lng]], km:kmBetween(fromLat,fromLng,toPub.lat,toPub.lng)};
+  }).then(function(r){
+    var line=L.polyline(r.coords,{color:color,weight:4,opacity:.85,dashArray:'1, 8',lineCap:'round'}).addTo(map);
+    routeLines.push(line);
+    var mid=r.coords[Math.floor(r.coords.length/2)] || r.coords[0];
+    var lbl=L.marker(mid,{icon:L.divIcon({className:'',html:'<div class="routeLabel" style="border-color:'+color+'">'+r.km.toFixed(1)+' km</div>',iconSize:[60,20],iconAnchor:[30,offset?30:0]}),interactive:false}).addTo(map);
+    routeLabels.push(lbl);
+    return r.km;
+  });
+}
+
+function goToLocation(lat,lng,label){
+  myLoc=[lat,lng];
+  dropMe(lat,lng);
   clearRoutes();
 
-  for (const pub of pubsWeCalled) {
-    pub._dist = distanceInKm(lat, lng, pub.lat, pub.lng);
-  }
-  pubsWeCalled.sort((a, b) => a._dist - b._dist);
+  pubs.forEach(function(p){ p._dist=kmBetween(lat,lng,p.lat,p.lng) });
+  pubs.sort(function(a,b){ return a._dist-b._dist });
 
-  const nearestPub = pubsWeCalled[0];
-  const cheapPubs = pubsWeCalled.filter(p => p.price < 8);
-  const nearestCheapPub = cheapPubs.length
-    ? cheapPubs.reduce((best, p) => (p._dist < best._dist ? p : best))
-    : null;
+  var nearest=pubs[0];
+  var cheapOnes=pubs.filter(function(p){return p.price<8});
+  var nearestCheap=cheapOnes.length ? cheapOnes.reduce(function(best,p){return p._dist<best._dist?p:best}) : null;
 
-  drawPubPins({ nearest: nearestPub, cheapest: nearestCheapPub });
-  renderCrawlPicks();
+  drawPins({nearest:nearest,cheapest:nearestCheap});
+  renderCrawlChips();
 
-  document.getElementById('locStatus').textContent = (labelText || '') + ' — drawing routes...';
+  document.getElementById('locStatus').textContent=(label||'')+' — drawing routes...';
   document.getElementById('routeLegend').classList.add('show');
 
-  const skylineBlue = getComputedStyle(document.documentElement).getPropertyValue('--skyline').trim();
-  const cheapGreen = getComputedStyle(document.documentElement).getPropertyValue('--cheapAF').trim();
+  drawRoute(lat,lng,nearest,'#4fb1e0',false).then(function(nearKm){
+    var extras=[{num:nearKm.toFixed(1)+'km',label:'Nearest — '+nearest.name}];
 
-  const nearestKm = await drawRouteLine(lat, lng, nearestPub, skylineBlue, false);
+    var chain=Promise.resolve();
+    if(nearestCheap && nearestCheap!==nearest){
+      chain=drawRoute(lat,lng,nearestCheap,'#4fae63',true).then(function(cheapKm){
+        extras.push({num:cheapKm.toFixed(1)+'km',label:'Cheapest nearby — '+nearestCheap.name});
+      });
+    } else if(nearestCheap===nearest){
+      extras.push({num:'same pub!',label:'Nearest is also cheapest'});
+    } else {
+      extras.push({num:'n/a',label:'No sub-$8 pub found'});
+    }
 
-  const extraStats = [
-    { num: `${nearestKm.toFixed(1)}km`, label: `Nearest — ${nearestPub.name}` }
-  ];
-
-  if (nearestCheapPub && nearestCheapPub !== nearestPub) {
-    const cheapKm = await drawRouteLine(lat, lng, nearestCheapPub, cheapGreen, true);
-    extraStats.push({ num: `${cheapKm.toFixed(1)}km`, label: `Cheapest nearby — ${nearestCheapPub.name}` });
-  } else if (nearestCheapPub === nearestPub) {
-    extraStats.push({ num: `same pub!`, label: `Nearest is also cheapest` });
-  } else {
-    extraStats.push({ num: `n/a`, label: `No sub-$8 pub found` });
-  }
-
-  paintStats(extraStats);
-
-  const allBounds = [[lat, lng], [nearestPub.lat, nearestPub.lng]];
-  if (nearestCheapPub) allBounds.push([nearestCheapPub.lat, nearestCheapPub.lng]);
-  map.fitBounds(allBounds, { padding: [60, 60] });
-
-  document.getElementById('locStatus').textContent = labelText || '';
+    chain.then(function(){
+      refreshStats(extras);
+      var b=[[lat,lng],[nearest.lat,nearest.lng]];
+      if(nearestCheap) b.push([nearestCheap.lat,nearestCheap.lng]);
+      map.fitBounds(b,{padding:[60,60]});
+      document.getElementById('locStatus').textContent=label||'';
+    });
+  });
 }
 
-document.getElementById('useMyLocationBtn').addEventListener('click', () => {
-  const statusEl = document.getElementById('locStatus');
-  if (!navigator.geolocation) {
-    statusEl.textContent = "your browser won't do location, try typing an address instead";
-    return;
-  }
-  statusEl.textContent = "finding you...";
+document.getElementById('useMyLocationBtn').onclick=function(){
+  var s=document.getElementById('locStatus');
+  if(!navigator.geolocation){ s.textContent="your browser won't do location, try typing an address instead"; return }
+  s.textContent="finding you...";
   navigator.geolocation.getCurrentPosition(
-    pos => handleNewLocation(pos.coords.latitude, pos.coords.longitude, "using your current location"),
-    err => { statusEl.textContent = "couldn't get your location — permission blocked? try typing an address"; },
-    { enableHighAccuracy: true, timeout: 8000 }
+    function(pos){ goToLocation(pos.coords.latitude,pos.coords.longitude,"using your current location") },
+    function(){ s.textContent="couldn't get your location — permission blocked? try typing an address" },
+    {enableHighAccuracy:true,timeout:8000}
   );
-});
+};
 
-document.getElementById('searchAddyBtn').addEventListener('click', doAddressSearch);
-document.getElementById('manualAddyInput').addEventListener('keydown', e => { if (e.key === 'Enter') doAddressSearch(); });
+document.getElementById('searchAddyBtn').onclick=doAddySearch;
+document.getElementById('manualAddyInput').addEventListener('keydown',function(e){ if(e.key==='Enter') doAddySearch() });
 
-async function doAddressSearch() {
-  const q = document.getElementById('manualAddyInput').value.trim();
-  const statusEl = document.getElementById('locStatus');
-  if (!q) return;
-  statusEl.textContent = "looking that up...";
-  try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q + ', Brisbane, Australia')}`);
-    const data = await res.json();
-    if (!data.length) { statusEl.textContent = "couldn't find that place, try being more specific"; return; }
-    handleNewLocation(parseFloat(data[0].lat), parseFloat(data[0].lon), `showing pubs near "${q}"`);
-  } catch (e) {
-    statusEl.textContent = "search broke, try again";
-  }
+function doAddySearch(){
+  var q=document.getElementById('manualAddyInput').value.trim();
+  var s=document.getElementById('locStatus');
+  if(!q) return;
+  s.textContent="looking that up...";
+  fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(q+', Brisbane, Australia'))
+    .then(function(r){return r.json()})
+    .then(function(data){
+      if(!data.length){ s.textContent="couldn't find that place, try being more specific"; return }
+      goToLocation(parseFloat(data[0].lat),parseFloat(data[0].lon),'showing pubs near "'+q+'"');
+    })
+    .catch(function(){ s.textContent="search broke, try again" });
 }
 
-// ---------- Pub crawl planner ----------
+var crawlPanel=document.getElementById('crawlPanel');
+var crawlBtn=document.getElementById('crawlModeBtn');
+var optimizeBtn=document.getElementById('optimizeCrawlBtn');
 
-const crawlPanel = document.getElementById('crawlPanel');
-const crawlModeBtn = document.getElementById('crawlModeBtn');
-const optimizeCrawlBtn = document.getElementById('optimizeCrawlBtn');
+crawlBtn.onclick=function(){
+  crawlOn=!crawlOn;
+  crawlBtn.textContent=crawlOn ? '✅ Picking pubs...' : '🍻 Plan a Crawl';
+  crawlPanel.classList.toggle('show',crawlOn);
+  if(crawlOn) renderCrawlChips();
+};
 
-crawlModeBtn.addEventListener('click', () => {
-  crawlModeOn = !crawlModeOn;
-  crawlModeBtn.textContent = crawlModeOn ? '✅ Picking pubs...' : '🍻 Plan a Crawl';
-  crawlPanel.classList.toggle('show', crawlModeOn);
-  if (crawlModeOn) renderCrawlPicks();
-});
-
-document.getElementById('clearCrawlBtn').addEventListener('click', () => {
-  crawlPicked = [];
+document.getElementById('clearCrawlBtn').onclick=function(){
+  crawlPicked=[];
   clearCrawlRoute();
-  document.getElementById('crawlResult').innerHTML = '';
-  renderCrawlPicks();
-  drawPubPins();
-});
+  document.getElementById('crawlResult').innerHTML='';
+  renderCrawlChips();
+  drawPins();
+};
 
-function toggleCrawlPick(pub) {
-  const idx = crawlPicked.indexOf(pub);
-  if (idx !== -1) {
-    crawlPicked.splice(idx, 1);
+function toggleCrawl(pub){
+  var idx=crawlPicked.indexOf(pub);
+  if(idx!==-1){
+    crawlPicked.splice(idx,1);
   } else {
-    if (crawlPicked.length >= 4) {
-      document.getElementById('crawlResult').innerHTML = `<span style="color:var(--rippedOff)">max 4 pubs per crawl — deselect one first</span>`;
+    if(crawlPicked.length>=4){
+      document.getElementById('crawlResult').innerHTML='<span style="color:#d1543a">max 4 pubs per crawl — deselect one first</span>';
       return;
     }
     crawlPicked.push(pub);
   }
-  renderCrawlPicks();
-  drawPubPins();
+  renderCrawlChips();
+  drawPins();
 }
 
-function renderCrawlPicks() {
-  const el = document.getElementById('crawlPicks');
-  el.innerHTML = pubsWeCalled.map(p => {
-    const idx = crawlPicked.indexOf(p);
-    const picked = idx !== -1;
-    return `<div class="crawlChip ${picked ? 'picked' : ''}" data-name="${p.name}">
-      ${picked ? `<span class="num">${idx + 1}.</span> ` : ''}${p.name} <span style="opacity:0.6">$${p.price.toFixed(2)}</span>
-    </div>`;
-  }).join('');
-  el.querySelectorAll('.crawlChip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      const pub = pubsWeCalled.find(p => p.name === chip.dataset.name);
-      toggleCrawlPick(pub);
-    });
+function renderCrawlChips(){
+  var el=document.getElementById('crawlPicks');
+  var html='';
+  pubs.forEach(function(p){
+    var idx=crawlPicked.indexOf(p);
+    var picked=idx!==-1;
+    html+='<div class="crawlChip '+(picked?'picked':'')+'" data-name="'+p.name+'">'+(picked?'<span class="num">'+(idx+1)+'.</span> ':'')+p.name+' <span style="opacity:.6">$'+p.price.toFixed(2)+'</span></div>';
   });
-  optimizeCrawlBtn.disabled = crawlPicked.length < 3;
+  el.innerHTML=html;
+  el.querySelectorAll('.crawlChip').forEach(function(chip){
+    chip.onclick=function(){
+      var pub=pubs.find(function(p){return p.name===chip.dataset.name});
+      toggleCrawl(pub);
+    };
+  });
+  optimizeBtn.disabled=crawlPicked.length<3;
 }
 
-let crawlRouteLines = [];
-let crawlRouteLabels = [];
+var crawlRouteLines=[],crawlRouteLabels=[];
 
-function clearCrawlRoute() {
-  crawlRouteLines.forEach(l => map.removeLayer(l));
-  crawlRouteLines = [];
-  crawlRouteLabels.forEach(l => map.removeLayer(l));
-  crawlRouteLabels = [];
+function clearCrawlRoute(){
+  crawlRouteLines.forEach(function(l){map.removeLayer(l)});
+  crawlRouteLines=[];
+  crawlRouteLabels.forEach(function(l){map.removeLayer(l)});
+  crawlRouteLabels=[];
 }
 
-optimizeCrawlBtn.addEventListener('click', async () => {
-  if (crawlPicked.length < 3) return;
-  const resultEl = document.getElementById('crawlResult');
-  resultEl.textContent = 'optimizing your crawl route...';
+optimizeBtn.onclick=function(){
+  if(crawlPicked.length<3) return;
+  var resultEl=document.getElementById('crawlResult');
+  resultEl.textContent='optimizing your crawl route...';
   clearCrawlRoute();
 
-  const coordsList = [];
-  const originIsMe = !!myLastLoc;
-  if (originIsMe) coordsList.push(`${myLastLoc[1]},${myLastLoc[0]}`);
-  crawlPicked.forEach(p => coordsList.push(`${p.lng},${p.lat}`));
+  var coordsList=[];
+  var originIsMe=!!myLoc;
+  if(originIsMe) coordsList.push(myLoc[1]+','+myLoc[0]);
+  crawlPicked.forEach(function(p){ coordsList.push(p.lng+','+p.lat) });
 
-  const crawlPurple = getComputedStyle(document.documentElement).getPropertyValue('--crawlPurple').trim();
+  var url='https://router.project-osrm.org/trip/v1/foot/'+coordsList.join(';')+'?source=first&roundtrip=false&overview=full&geometries=geojson';
 
-  try {
-    const url = `https://router.project-osrm.org/trip/v1/foot/${coordsList.join(';')}?source=first&roundtrip=false&overview=full&geometries=geojson`;
-    const res = await fetch(url);
-    const data = await res.json();
-    if (!data.trips || !data.trips.length) throw new Error('no trip');
+  fetch(url).then(function(r){return r.json()}).then(function(data){
+    if(!data.trips || !data.trips.length) throw 'no trip';
 
-    const trip = data.trips[0];
-    const coords = trip.geometry.coordinates.map(c => [c[1], c[0]]);
-    const totalKm = trip.distance / 1000;
-    const totalMin = Math.round(trip.duration / 60);
+    var trip=data.trips[0];
+    var coords=trip.geometry.coordinates.map(function(c){return [c[1],c[0]]});
+    var totalKm=trip.distance/1000;
+    var totalMin=Math.round(trip.duration/60);
 
-    const line = L.polyline(coords, { color: crawlPurple, weight: 5, opacity: 0.9, dashArray: '2, 10', lineCap: 'round' }).addTo(map);
+    var line=L.polyline(coords,{color:'#a56fd1',weight:5,opacity:.9,dashArray:'2, 10',lineCap:'round'}).addTo(map);
     crawlRouteLines.push(line);
 
-    const waypointOrder = data.waypoints
-      .map((wp, i) => ({ i, order: wp.waypoint_index }))
-      .sort((a, b) => a.order - b.order)
-      .map(w => w.i);
+    var order=data.waypoints.map(function(wp,i){return {i:i,order:wp.waypoint_index}}).sort(function(a,b){return a.order-b.order}).map(function(w){return w.i});
+    var stops=order.filter(function(i){ return !(originIsMe && i===0) }).map(function(i){ return originIsMe ? crawlPicked[i-1] : crawlPicked[i] });
 
-    const orderedStops = waypointOrder
-      .filter(i => !(originIsMe && i === 0))
-      .map(i => originIsMe ? crawlPicked[i - 1] : crawlPicked[i]);
-
-    orderedStops.forEach((pub, idx) => {
-      const numIcon = L.divIcon({
-        className: '',
-        html: `<div style="background:${crawlPurple};color:#1a1208;border-radius:50%;width:26px;height:26px;
-                display:flex;align-items:center;justify-content:center;font-weight:bold;font-family:Arial;
-                border:2px solid var(--stout);box-shadow:0 2px 6px rgba(0,0,0,0.6);">${idx + 1}</div>`,
-        iconSize: [26, 26], iconAnchor: [13, 13]
+    stops.forEach(function(pub,idx){
+      var numIcon=L.divIcon({
+        className:'',
+        html:'<div style="background:#a56fd1;color:#1a1208;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-family:Arial;border:2px solid #160f0a;box-shadow:0 2px 6px rgba(0,0,0,.6)">'+(idx+1)+'</div>',
+        iconSize:[26,26],iconAnchor:[13,13]
       });
-      const stopMarker = L.marker([pub.lat, pub.lng], { icon: numIcon, interactive: false }).addTo(map);
-      crawlRouteLabels.push(stopMarker);
+      crawlRouteLabels.push(L.marker([pub.lat,pub.lng],{icon:numIcon,interactive:false}).addTo(map));
     });
 
-    const totalPintCost = orderedStops.reduce((s, p) => s + p.price, 0).toFixed(2);
+    var totalCost=stops.reduce(function(s,p){return s+p.price},0).toFixed(2);
+    var list='';
+    stops.forEach(function(p){ list+='<li>'+p.name+' — $'+p.price.toFixed(2)+' ('+p.suburb+')</li>' });
 
-    resultEl.innerHTML = `
-      <strong>${totalKm.toFixed(1)} km · ~${totalMin} min walking · $${totalPintCost} for one round</strong>
-      <ol>
-        ${orderedStops.map(p => `<li>${p.name} — $${p.price.toFixed(2)} (${p.suburb})</li>`).join('')}
-      </ol>
-    `;
+    resultEl.innerHTML='<strong>'+totalKm.toFixed(1)+' km · ~'+totalMin+' min walking · $'+totalCost+' for one round</strong><ol>'+list+'</ol>';
 
-    const fitBounds = coords.length ? coords : orderedStops.map(p => [p.lat, p.lng]);
-    map.fitBounds(fitBounds, { padding: [50, 50] });
-  } catch (e) {
-    resultEl.innerHTML = `<span style="color:var(--rippedOff)">couldn't reach the routing service — try again in a sec</span>`;
-  }
-});
-
-// ---------- Submit a pub ----------
-
-const submitPanel = document.getElementById('submitPanel');
-const submitModeBtn = document.getElementById('submitModeBtn');
-let pendingNewPub = null;
-
-submitModeBtn.addEventListener('click', () => {
-  const showing = submitPanel.classList.toggle('show');
-  submitModeBtn.textContent = showing ? '➕ Cancel' : '➕ Submit a Pub';
-  if (!showing) resetSubmitForm();
-});
-
-function resetSubmitForm() {
-  pendingNewPub = null;
-  document.getElementById('submitPreview').classList.remove('show');
-  document.getElementById('submitStatus').textContent = '';
-}
-
-document.getElementById('findPubLocBtn').addEventListener('click', async () => {
-  const name = document.getElementById('subPubName').value.trim();
-  const addr = document.getElementById('subAddress').value.trim();
-  const price = parseFloat(document.getElementById('subPrice').value);
-  const beer = document.getElementById('subBeer').value.trim() || 'Unlisted';
-  const statusEl = document.getElementById('submitStatus');
-
-  if (!name || !addr) { statusEl.textContent = 'need at least a pub name and an address to search'; return; }
-  if (isNaN(price) || price <= 0 || price > 30) { statusEl.textContent = 'enter a valid price'; return; }
-
-  statusEl.textContent = 'looking up that address...';
-  document.getElementById('submitPreview').classList.remove('show');
-
-  try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(addr + ', Brisbane, Australia')}`);
-    const data = await res.json();
-    if (!data.length) { statusEl.textContent = "couldn't find that address — try adding a suburb"; return; }
-
-    const lat = parseFloat(data[0].lat);
-    const lng = parseFloat(data[0].lon);
-    const suburb = (data[0].display_name || '').split(',')[1]?.trim() || 'Brisbane';
-
-    pendingNewPub = { name, lat, lng, price, beer, suburb };
-
-    document.getElementById('previewCoords').textContent = `${name} — ${lat.toFixed(4)}, ${lng.toFixed(4)} (${suburb})`;
-    document.getElementById('submitPreview').classList.add('show');
-    statusEl.textContent = 'found it — confirm to drop the pin';
-  } catch (e) {
-    statusEl.textContent = 'lookup failed, try again';
-  }
-});
-
-document.getElementById('cancelAddPubBtn').addEventListener('click', resetSubmitForm);
-
-document.getElementById('confirmAddPubBtn').addEventListener('click', () => {
-  if (!pendingNewPub) return;
-  pubsWeCalled.push(pendingNewPub);
-
-  const priceArr = pubsWeCalled.map(p => p.price);
-  const newAvg = (priceArr.reduce((a, b) => a + b, 0) / priceArr.length).toFixed(2);
-  const newMin = Math.min(...priceArr).toFixed(2);
-  const newMax = Math.max(...priceArr).toFixed(2);
-
-  document.getElementById('submitStatus').innerHTML = `<span style="color:var(--cheapAF)">✅ ${pendingNewPub.name} added to the map!</span>`;
-
-  drawPubPins();
-  map.panTo([pendingNewPub.lat, pendingNewPub.lng]);
-  renderCrawlPicks();
-
-  document.getElementById('subPubName').value = '';
-  document.getElementById('subAddress').value = '';
-  document.getElementById('subPrice').value = '';
-  document.getElementById('subBeer').value = '';
-  document.getElementById('submitPreview').classList.remove('show');
-
-  window._piDirty = true;
-  pendingNewPub = null;
-});
-
-// ---------- Tabs ----------
-
-document.getElementById('tabMapBtn').addEventListener('click', () => switchTab('map'));
-document.getElementById('tabPiBtn').addEventListener('click', () => switchTab('pi'));
-
-function switchTab(which) {
-  document.getElementById('tabMapBtn').classList.toggle('active', which === 'map');
-  document.getElementById('tabPiBtn').classList.toggle('active', which === 'pi');
-  document.getElementById('view-map').classList.toggle('hidden', which !== 'map');
-  document.getElementById('view-pintindex').classList.toggle('show', which === 'pi');
-  if (which === 'map') setTimeout(() => map.invalidateSize(), 50);
-  if (which === 'pi' && !piBuilt) buildPintIndex();
-}
-
-// ---------- The Pint Index (deadpan mock dashboard) ----------
-
-let piBuilt = false;
-
-function buildPintIndex() {
-  piBuilt = true;
-
-  document.getElementById('piDate').innerHTML = `Market close — ${new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}<br>Queensland Beverage Exchange (QBX)`;
-
-  const months = ['Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'];
-  const composite = [8.10, 8.15, 8.22, 8.40, 8.55, 8.48, 8.60, 8.71, 8.80, 8.75, 8.88, 8.93];
-
-  const tickerItems = [
-    { label: 'XXXX GOLD (TWG)', val: '$9.00', chg: '+2.3%', up: true },
-    { label: 'GREAT NORTHERN (FTV)', val: '$7.50', chg: '-1.1%', up: false },
-    { label: 'PERONI (PTZ)', val: '$11.50', chg: '+4.8%', up: true },
-    { label: 'CARLTON DRAUGHT (WLG)', val: '$6.90', chg: '-0.4%', up: false },
-    { label: 'FURPHY (KGP)', val: '$8.90', chg: '+1.2%', up: true },
-    { label: 'STONE & WOOD (SBK)', val: '$10.20', chg: '+3.6%', up: true },
-  ];
-  document.getElementById('piTicker').innerHTML = tickerItems.map(t =>
-    `<span>${t.label} <strong>${t.val}</strong> <span class="${t.up ? 'pi-up' : 'pi-down'}">${t.up ? '▲' : '▼'} ${t.chg}</span></span>`
-  ).join('');
-
-  const yoyChange = (((composite[composite.length - 1] - composite[0]) / composite[0]) * 100).toFixed(1);
-  const statCards = [
-    { n: `$${composite[composite.length - 1].toFixed(2)}`, l: 'QBX Composite' },
-    { n: `+${yoyChange}%`, l: '12-Month Change' },
-    { n: '$0.02', l: "Today's Move" },
-    { n: 'Volatile', l: 'Market Sentiment' },
-  ];
-  document.getElementById('piStatGrid').innerHTML = statCards.map(s =>
-    `<div class="pi-card"><div class="n">${s.n}</div><div class="l">${s.l}</div></div>`
-  ).join('');
-
-  const foam = getComputedStyle(document.documentElement).getPropertyValue('--foam').trim();
-  const amber = getComputedStyle(document.documentElement).getPropertyValue('--amber').trim();
-  const line = getComputedStyle(document.documentElement).getPropertyValue('--line').trim();
-
-  new Chart(document.getElementById('piChart'), {
-    type: 'line',
-    data: {
-      labels: months,
-      datasets: [{
-        label: 'QBX Schooner Composite ($)',
-        data: composite,
-        borderColor: amber,
-        backgroundColor: 'rgba(224,161,54,0.12)',
-        fill: true,
-        tension: 0.35,
-        pointRadius: 3,
-        pointBackgroundColor: amber,
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { labels: { color: foam } } },
-      scales: {
-        x: { ticks: { color: foam }, grid: { color: line } },
-        y: { ticks: { color: foam, callback: v => '$' + v.toFixed(2) }, grid: { color: line } }
-      }
-    }
+    var fitB=coords.length?coords:stops.map(function(p){return [p.lat,p.lng]});
+    map.fitBounds(fitB,{padding:[50,50]});
+  }).catch(function(){
+    resultEl.innerHTML='<span style="color:#d1543a">couldn\'t reach the routing service — try again in a sec</span>';
   });
+};
 
-  const suburbs = ['Fortitude Valley','Toowong','Petrie Terrace','Kangaroo Point','Woolloongabba','South Brisbane','CBD','Milton'];
-  const volatility = [4.2, 2.1, 6.8, 3.4, 1.9, 5.0, 7.5, 2.6];
+var submitPanel=document.getElementById('submitPanel');
+var submitBtn=document.getElementById('submitModeBtn');
+var pendingPub=null;
 
-  new Chart(document.getElementById('piBarChart'), {
-    type: 'bar',
-    data: {
-      labels: suburbs,
-      datasets: [{
-        label: 'Volatility Index',
-        data: volatility,
-        backgroundColor: volatility.map(v => v > 5 ? '#d1543a' : v > 3 ? '#e0a136' : '#4fae63'),
-        borderRadius: 4,
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { color: foam }, grid: { display: false } },
-        y: { ticks: { color: foam }, grid: { color: line } }
-      }
-    }
-  });
+submitBtn.onclick=function(){
+  var showing=submitPanel.classList.toggle('show');
+  submitBtn.textContent=showing?'➕ Cancel':'➕ Submit a Pub';
+  if(!showing) resetSubmitForm();
+};
 
-  document.getElementById('piCommentary').textContent =
-    `Analysts describe conditions across the Brisbane schooner market as "structurally tight," with Petrie Terrace continuing to trade at a premium amid persistent demand for imported lagers. The QBX Composite has advanced steadily over the trailing twelve months, driven largely by inflationary pressure in the CBD corridor. Woolloongabba remains the market's defensive play, posting the lowest volatility reading on the board. Analysts caution that past pint performance is not indicative of future pint performance, and recommend a diversified pub portfolio.`;
+function resetSubmitForm(){
+  pendingPub=null;
+  document.getElementById('submitPreview').classList.remove('show');
+  document.getElementById('submitStatus').textContent='';
 }
+
+var subSearch=document.getElementById('subPubSearch');
+var dropdown=document.getElementById('pubSearchDropdown');
+var searchTimer=null;
+
+subSearch.addEventListener('input',function(){
+  clearTimeout(searchTimer);
+  var q=subSearch.value.trim();
+  document.getElementById('submitPreview').classList.remove('show');
+  pendingPub=null;
+
+  if(q.length<3){ dropdown.classList.remove('show'); return }
+
+  dropdown.innerHTML='<div id="pubSearchLoading">searching...</div>';
+  dropdown.classList.add('show');
+  searchTimer=setTimeout(function(){ runSearch(q) },400);
+});
+
+function runSearch(q){
+  fetch('https://nominatim.openstreetmap.org/search?format=json&limit=6&addressdetails=1&q='+encodeURIComponent(q+', Brisbane, Queensland, Australia'))
+    .then(function(r){return r.json()})
+    .then(function(data){
+      if(!data.length){ dropdown.innerHTML='<div id="pubSearchLoading">no matches — try a different spelling or add a suburb</div>'; return }
+
+      var html='';
+      data.forEach(function(r,i){
+        var shortName=r.display_name.split(',')[0];
+        var rest=r.display_name.split(',').slice(1,4).join(',').trim();
+        html+='<div class="pubOption" data-idx="'+i+'"><span class="oName">'+shortName+'</span><span class="oAddr">'+rest+'</span></div>';
+      });
+      dropdown.innerHTML=html;
+
+      dropdown.querySelectorAll('.pubOption').forEach(function(opt){
+        opt.onclick=function(){
+          var r=data[parseInt(opt.dataset.idx)];
+          pickPub(r);
+        };
+      });
+    })
+    .catch(function(){ dropdown.innerHTML='<div id="pubSearchLoading">search failed, try again</div>' });
+}
+
+function pickPub(r){
+  var lat=parseFloat(r.lat);
+  var lng=parseFloat(r.lon);
+  var parts=r.display_name.split(',');
+  var name=parts[0].trim();
+  var suburb=(r.address && (r.address.suburb || r.address.city_district)) || (parts[1]?parts[1].trim():'Brisbane');
+
+  pendingPub={name:name,lat:lat,lng:lng,price:null,beer:null,suburb:suburb};
+
+  document.getElementById('previewCoords').textContent=name+' — '+lat.toFixed(4)+', '+lng.toFixed(4)+' ('+suburb+')';
+  document.getElementById('submitPreview').classList.add('show');
+  dropdown.classList.remove('show');
+  subSearch.value=name;
+  document.getElementById('submitStatus').textContent='now enter a price and confirm below';
+}
+
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.searchWrap')) dropdown.classList.remove('show');
+});
+
+document.getElementById('cancelAddPubBtn').onclick=resetSubmitForm;
+
+document.getElementById('confirmAddPubBtn').onclick=function(){
+  if(!pendingPub) return;
+
+  var statusEl=document.getElementById('submitStatus');
+  var price=parseFloat(document.getElementById('subPrice').value);
+  var beer=document.getElementById('subBeer').value.trim()||'Unlisted';
+
+  if(isNaN(price) || price<=0 || price>=30){
+    statusEl.textContent='enter a valid price before confirming';
+    return;
+  }
+
+  pendingPub.price=price;
+  pendingPub.beer=beer;
+  pubs.push(pendingPub);
+
+  statusEl.innerHTML='<span style="color:#4fae63">✅ '+pendingPub.name+' added to the map!</span>';
+
+  drawPins();
+  map.panTo([pendingPub.lat,pendingPub.lng]);
+  renderCrawlChips();
+
+  subSearch.value='';
+  document.getElementById('subPrice').value='';
+  document.getElementById('subBeer').value='';
+  document.getElementById('submitPreview').classList.remove('show');
+
+  pendingPub=null;
+};
 </script>
 </body>
 </html>

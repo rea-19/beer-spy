@@ -1,177 +1,84 @@
-:root{
-    --stout: #150e0a;
-    --stout2: #1f1510;
-    --amber: #e0a136;
-    --amberdim: #b47f2a;
-    --foam: #f3e8d2;
-    --cheapAF: #4fae63;
-    --midtier: #e0a136;
-    --rippedOff: #d1543a;
-    --line: rgba(243,232,210,0.12);
-    --skyline: #4fb1e0;
-    --crawlPurple: #a56fd1;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--stout);
-    font-family: 'Georgia', 'Times New Roman', serif;
-    color: var(--foam);
-  }
-  #app { display: flex; flex-direction: column; height: 100vh; }
-  header {
-    padding: 14px 20px 10px;
-    border-bottom: 2px solid var(--line);
-    display: flex; align-items: baseline; justify-content: space-between;
-    flex-wrap: wrap; gap: 8px;
-  }
-  header h1 { margin: 0; font-size: 22px; letter-spacing: 1px; color: var(--amber); text-transform: uppercase; }
-  header .tag { font-size: 12px; opacity: 0.7; font-style: italic; }
+body{margin:0;background:#160f0a;font-family:Georgia,'Times New Roman',serif;color:#f2e7d0}
+*{box-sizing:border-box}
 
-  #tabBar { display: flex; background: var(--stout2); border-bottom: 2px solid var(--line); }
-  #tabBar button {
-    flex: 1; padding: 10px; border: none; background: transparent; color: var(--foam);
-    font-family: inherit; font-size: 13px; letter-spacing: 1px; text-transform: uppercase;
-    cursor: pointer; opacity: 0.6; border-bottom: 3px solid transparent;
-  }
-  #tabBar button.active { opacity: 1; border-bottom: 3px solid var(--amber); color: var(--amber); }
+#app{display:flex;flex-direction:column;height:100vh}
 
-  #findMeBar {
-    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
-    padding: 10px 20px; background: var(--stout2); border-bottom: 2px solid var(--line);
-  }
-  #findMeBar input {
-    flex: 1; min-width: 160px; padding: 8px 12px; border-radius: 6px;
-    border: 1px solid var(--line); background: var(--stout); color: var(--foam);
-    font-family: inherit; font-size: 13px;
-  }
-  button.beerBtn {
-    padding: 8px 14px; border-radius: 6px; border: none; cursor: pointer;
-    background: var(--amber); color: #1a1208; font-weight: bold; font-size: 13px;
-    font-family: inherit;
-  }
-  button.beerBtn:hover { background: var(--amberdim); }
-  button.beerBtn.secondary { background: transparent; border: 1px solid var(--amberdim); color: var(--amber); }
-  button.beerBtn.purple { background: var(--crawlPurple); color: #1a1208; }
-  button.beerBtn.purple:hover { background: #8a56b3; }
-  button.beerBtn:disabled { opacity: 0.4; cursor: not-allowed; }
-  #locStatus { font-size: 12px; opacity: 0.7; width: 100%; }
+header{padding:14px 20px 10px;border-bottom:2px solid rgba(242,231,208,.12);display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px}
+header h1{margin:0;font-size:22px;letter-spacing:1px;color:#dd9f34;text-transform:uppercase}
+header .tag{font-size:12px;opacity:.7;font-style:italic}
 
-  #statsBarThingy {
-    display: flex; background: var(--stout2); border-bottom: 2px solid var(--line); flex-wrap: wrap;
-  }
-  .stat { flex: 1; min-width: 140px; text-align: center; padding: 14px 10px; border-right: 1px solid var(--line); }
-  .stat:last-child { border-right: none; }
-  .stat .num { font-size: 22px; font-weight: bold; color: var(--amber); line-height: 1.1; }
-  .stat .label { font-size: 11px; letter-spacing: 1px; opacity: 0.65; text-transform: uppercase; margin-top: 4px; }
+#findMeBar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 20px;background:#1e150e;border-bottom:2px solid rgba(242,231,208,.12)}
+#findMeBar input{flex:1;min-width:160px;padding:8px 12px;border-radius:6px;border:1px solid rgba(242,231,208,.12);background:#160f0a;color:#f2e7d0;font-family:inherit;font-size:13px}
+button.beerBtn{padding:8px 14px;border-radius:6px;border:none;cursor:pointer;background:#dd9f34;color:#1a1208;font-weight:bold;font-size:13px;font-family:inherit}
+button.beerBtn:hover{background:#b47d29}
+.beerBtn.secondary{background:transparent;border:1px solid #b47d29;color:#dd9f34}
+.beerBtn.purple{background:#a56fd1;color:#1a1208}
+.beerBtn.purple:hover{background:#8a56b3}
+button.beerBtn:disabled{opacity:.4;cursor:not-allowed}
+#locStatus{font-size:12px;opacity:.7;width:100%}
 
-  #routeLegend {
-    display: none;
-    gap: 18px; flex-wrap: wrap;
-    padding: 8px 20px; background: var(--stout2); border-bottom: 2px solid var(--line);
-    font-size: 12px;
-  }
-  #routeLegend.show { display: flex; }
-  #routeLegend .item { display: flex; align-items: center; gap: 6px; }
-  #routeLegend .swatch { width: 18px; height: 3px; border-radius: 2px; display: inline-block; }
+#statsBarThingy{display:flex;background:#1e150e;border-bottom:2px solid rgba(242,231,208,.12);flex-wrap:wrap}
+.stat{flex:1;min-width:140px;text-align:center;padding:14px 10px;border-right:1px solid rgba(242,231,208,.12)}
+.stat:last-child{border-right:none}
+.stat .num{font-size:22px;font-weight:bold;color:#dd9f34;line-height:1.1}
+.stat .label{font-size:11px;letter-spacing:1px;opacity:.65;text-transform:uppercase;margin-top:4px}
 
-  #crawlPanel {
-    display: none;
-    padding: 10px 20px; background: var(--stout2); border-bottom: 2px solid var(--line);
-    font-size: 13px;
-  }
-  #crawlPanel.show { display: block; }
-  #crawlPanel .hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
-  #crawlPicks { display: flex; flex-wrap: wrap; gap: 8px; }
-  .crawlChip {
-    padding: 6px 10px; border-radius: 16px; border: 1px solid var(--line);
-    background: var(--stout); cursor: pointer; font-size: 12px; user-select: none;
-  }
-  .crawlChip.picked { background: var(--crawlPurple); color: #1a1208; border-color: var(--crawlPurple); font-weight: bold; }
-  .crawlChip .num { font-size: 11px; opacity: 0.8; }
-  #crawlResult { margin-top: 10px; font-size: 12px; opacity: 0.9; }
-  #crawlResult ol { margin: 6px 0 0 18px; padding: 0; }
+#routeLegend{display:none;gap:18px;flex-wrap:wrap;padding:8px 20px;background:#1e150e;border-bottom:2px solid rgba(242,231,208,.12);font-size:12px}
+#routeLegend.show{display:flex}
+#routeLegend .item{display:flex;align-items:center;gap:6px}
+#routeLegend .swatch{width:18px;height:3px;border-radius:2px;display:inline-block}
 
-  #view-map { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-  #view-pintindex { display: none; flex: 1; min-height: 0; overflow-y: auto; padding: 20px; }
-  #view-pintindex.show { display: block; }
-  #view-map.hidden { display: none; }
+#crawlPanel{display:none;padding:10px 20px;background:#1e150e;border-bottom:2px solid rgba(242,231,208,.12);font-size:13px}
+#crawlPanel.show{display:block}
+#crawlPanel .hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px}
+#crawlPicks{display:flex;flex-wrap:wrap;gap:8px}
+.crawlChip{padding:6px 10px;border-radius:16px;border:1px solid rgba(242,231,208,.12);background:#160f0a;cursor:pointer;font-size:12px;user-select:none}
+.crawlChip.picked{background:#a56fd1;color:#1a1208;border-color:#a56fd1;font-weight:bold}
+.crawlChip .num{font-size:11px;opacity:.8}
+#crawlResult{margin-top:10px;font-size:12px;opacity:.9}
+#crawlResult ol{margin:6px 0 0 18px;padding:0}
 
-  #map-wrap { position: relative; flex: 1; min-height: 0; }
-  #map { height: 100%; width: 100%; background: var(--stout); }
-  .legend {
-    position: absolute; bottom: 16px; left: 16px; z-index: 500;
-    background: rgba(21,14,10,0.9); border: 1px solid var(--line); border-radius: 6px;
-    padding: 10px 14px; font-size: 13px; backdrop-filter: blur(4px);
-  }
-  .legend div { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
-  .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; border: 1px solid rgba(0,0,0,0.3); }
-  .pin {
-    width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
-    display: flex; align-items: center; justify-content: center;
-    border: 2px solid var(--stout);
-    box-shadow: 0 0 10px 2px var(--glow-color, transparent), 0 3px 6px rgba(0,0,0,0.6);
-  }
-  .pin.hero { width: 48px; height: 48px; }
-  .pin.crawlpick { border: 3px solid var(--crawlPurple); }
-  .pin-price { transform: rotate(45deg); font-size: 12px; font-weight: bold; color: #1a1208; font-family: 'Arial', sans-serif; }
-  .pin.hero .pin-price { font-size: 14px; }
-  .badge {
-    position: absolute; top: -10px; left: -10px;
-    background: var(--stout); color: var(--foam); border: 1px solid var(--amber);
-    border-radius: 50%; width: 20px; height: 20px; font-size: 11px;
-    display: flex; align-items: center; justify-content: center;
-    transform: rotate(45deg); font-family: Arial, sans-serif; font-weight: bold;
-  }
-  .badge.crawlnum { border-color: var(--crawlPurple); background: var(--crawlPurple); color: #1a1208; }
-  .meMarker {
-    width: 20px; height: 20px; border-radius: 50%;
-    background: var(--skyline); border: 3px solid white;
-    box-shadow: 0 0 0 6px rgba(79,177,224,0.35), 0 2px 6px rgba(0,0,0,0.6);
-  }
-  .routeLabel {
-    background: var(--stout2); color: var(--foam); border: 1px solid var(--amberdim);
-    border-radius: 5px; padding: 2px 7px; font-size: 11px; font-weight: bold;
-    white-space: nowrap; font-family: Arial, sans-serif;
-  }
-  .leaflet-popup-content-wrapper { background: var(--stout2); color: var(--foam); border: 1px solid var(--amberdim); border-radius: 8px; }
-  .leaflet-popup-tip { background: var(--stout2); }
-  .popup-title { font-weight: bold; color: var(--amber); font-size: 15px; margin-bottom: 4px; }
-  .popup-price { font-size: 20px; font-weight: bold; }
-  .popup-meta { font-size: 12px; opacity: 0.75; margin-top: 4px; }
-  .leaflet-tile-pane { filter: brightness(0.85) saturate(1.1); }
-  .leaflet-control-attribution { background: rgba(21,14,10,0.8) !important; color: var(--foam) !important; }
-  .leaflet-control-attribution a { color: var(--amber) !important; }
+#submitPanel{display:none;padding:12px 20px;background:#1e150e;border-bottom:2px solid rgba(242,231,208,.12);font-size:13px}
+#submitPanel.show{display:block}
+#submitPanel .row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+#submitPanel input{padding:8px 12px;border-radius:6px;border:1px solid rgba(242,231,208,.12);background:#160f0a;color:#f2e7d0;font-family:inherit;font-size:13px}
+#submitPanel input.wide{flex:1;min-width:180px}
+#submitPanel input.narrow{width:110px}
+#submitPreview{margin-top:8px;padding:10px;border:1px dashed #b47d29;border-radius:6px;display:none}
+#submitPreview.show{display:block}
+#submitPreview .pt{font-weight:bold;color:#dd9f34}
+.searchWrap{position:relative;flex:1;min-width:220px}
+#pubSearchDropdown{display:none;position:absolute;top:100%;left:0;right:0;z-index:900;background:#160f0a;border:1px solid #b47d29;border-top:none;border-radius:0 0 6px 6px;max-height:220px;overflow-y:auto}
+#pubSearchDropdown.show{display:block}
+.pubOption{padding:8px 12px;cursor:pointer;border-bottom:1px solid rgba(242,231,208,.12);font-size:12px}
+.pubOption:last-child{border-bottom:none}
+.pubOption:hover{background:#1e150e}
+.pubOption .oName{color:#f2e7d0;font-weight:bold;display:block}
+.pubOption .oAddr{opacity:.65;font-size:11px}
+#pubSearchLoading{padding:8px 12px;font-size:12px;opacity:.6}
+#submitStatus{font-size:12px;opacity:.75;margin-top:4px}
 
-  /* Pint Index dashboard */
-  .pi-wrap { max-width: 900px; margin: 0 auto; }
-  .pi-masthead {
-    display: flex; justify-content: space-between; align-items: flex-end;
-    border-bottom: 3px double var(--amberdim); padding-bottom: 10px; margin-bottom: 6px; flex-wrap: wrap; gap: 8px;
-  }
-  .pi-masthead h2 { margin: 0; font-size: 26px; color: var(--amber); letter-spacing: 1px; }
-  .pi-masthead .pi-sub { font-size: 12px; opacity: 0.65; font-style: italic; }
-  .pi-date { font-size: 12px; opacity: 0.6; text-align: right; }
-  .pi-ticker {
-    background: var(--stout2); border: 1px solid var(--line); border-radius: 6px;
-    padding: 8px 14px; font-size: 12px; margin: 14px 0; overflow: hidden; white-space: nowrap;
-    font-family: 'Courier New', monospace;
-  }
-  .pi-ticker span { margin-right: 30px; }
-  .pi-up { color: var(--cheapAF); }
-  .pi-down { color: var(--rippedOff); }
-  .pi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0; }
-  .pi-card {
-    background: var(--stout2); border: 1px solid var(--line); border-radius: 8px; padding: 12px; text-align: center;
-  }
-  .pi-card .n { font-size: 20px; font-weight: bold; color: var(--amber); }
-  .pi-card .l { font-size: 10px; opacity: 0.6; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
-  .pi-chart-box {
-    background: var(--stout2); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin: 16px 0;
-  }
-  .pi-chart-box h3 { margin: 0 0 12px; font-size: 14px; color: var(--amber); text-transform: uppercase; letter-spacing: 1px; }
-  .pi-analysis {
-    background: var(--stout2); border: 1px solid var(--line); border-radius: 8px; padding: 16px; font-size: 13px; line-height: 1.6;
-  }
-  .pi-analysis h3 { margin: 0 0 8px; font-size: 14px; color: var(--amber); text-transform: uppercase; letter-spacing: 1px; }
-  .pi-analysis .byline { font-size: 11px; opacity: 0.55; font-style: italic; margin-top: 10px; }
+#map-wrap{position:relative;flex:1;min-height:0}
+#map{height:100%;width:100%;background:#160f0a}
+.legend{position:absolute;bottom:16px;left:16px;z-index:500;background:rgba(22,15,10,.9);border:1px solid rgba(242,231,208,.12);border-radius:6px;padding:10px 14px;font-size:13px;backdrop-filter:blur(4px)}
+.legend div{display:flex;align-items:center;gap:8px;margin:3px 0}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.3)}
+
+.pin{width:40px;height:40px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;border:2px solid #160f0a;box-shadow:0 0 10px 2px var(--glow-color,transparent),0 3px 6px rgba(0,0,0,.6)}
+.pin.hero{width:48px;height:48px}
+.pin.crawlpick{border:3px solid #a56fd1}
+.pin-price{transform:rotate(45deg);font-size:12px;font-weight:bold;color:#1a1208;font-family:Arial,sans-serif}
+.pin.hero .pin-price{font-size:14px}
+.badge{position:absolute;top:-10px;left:-10px;background:#160f0a;color:#f2e7d0;border:1px solid #dd9f34;border-radius:50%;width:20px;height:20px;font-size:11px;display:flex;align-items:center;justify-content:center;transform:rotate(45deg);font-family:Arial,sans-serif;font-weight:bold}
+.badge.crawlnum{border-color:#a56fd1;background:#a56fd1;color:#1a1208}
+.meMarker{width:20px;height:20px;border-radius:50%;background:#4fb1e0;border:3px solid white;box-shadow:0 0 0 6px rgba(79,177,224,.35),0 2px 6px rgba(0,0,0,.6)}
+.routeLabel{background:#1e150e;color:#f2e7d0;border:1px solid #b47d29;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:bold;white-space:nowrap;font-family:Arial,sans-serif}
+
+.leaflet-popup-content-wrapper{background:#1e150e;color:#f2e7d0;border:1px solid #b47d29;border-radius:8px}
+.leaflet-popup-tip{background:#1e150e}
+.popup-title{font-weight:bold;color:#dd9f34;font-size:15px;margin-bottom:4px}
+.popup-price{font-size:20px;font-weight:bold}
+.popup-meta{font-size:12px;opacity:.75;margin-top:4px}
+.leaflet-tile-pane{filter:brightness(.85) saturate(1.1)}
+.leaflet-control-attribution{background:rgba(22,15,10,.8)!important;color:#f2e7d0!important}
+.leaflet-control-attribution a{color:#dd9f34!important}
