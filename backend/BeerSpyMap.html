@@ -17,7 +17,7 @@
 <h1> <img class = "logo" src="logo.png" width = "25" height="25" > BeerSpy — Brisbane</h1>
 
 
-<span class="tag">cheapest pints, spied on your behalf</span>
+<span class="tag">Find cheap pints near you!</span>
 </header>
 
 <div id="findMeBar">
@@ -25,14 +25,14 @@
 <input id="manualAddyInput" type="text" placeholder="or type a suburb/address..." />
 <button class="beerBtn secondary" id="searchAddyBtn">Search</button>
 <button class="beerBtn purple" id="crawlModeBtn">Plan a Crawl</button>
-<button class="beerBtn secondary" id="submitModeBtn">➕ Submit a Pub</button>
+<button class="beerBtn secondary" id="submitModeBtn"> Submit a Pub</button>
 <div id="locStatus"></div>
 </div>
 
 <div id="submitPanel">
 <div class="row">
 <div class="searchWrap">
-<input class="wide" id="subPubSearch" type="text" placeholder="Start typing a pub name (e.g. Story Bridge Hotel)..." autocomplete="off" />
+<input class="wide" id="subPubSearch" type="text" placeholder="Start typing a pub name" autocomplete="off" />
 <div id="pubSearchDropdown"></div>
 </div>
 </div>
@@ -81,6 +81,14 @@ Selected: <span class="pt" id="previewCoords"></span>
 </div>
 
 <script>
+var pubs = [
+{name:"The Beat Megaclub",lat:-27.4678,lng:153.0281,price:13,suburb:"Fortitude Valley"},
+{name:"The Regatta",lat:-27.4936,lng:153.0107,price:13.5,suburb:"Toowong"},
+{name:"The Caxton",lat:-27.4626,lng:153.0089,price:13.00,suburb:"Petrie Terrace"},
+{name:"Story Bridge Hotel",lat:-27.4689621,lng:153.0330472,price:14.50,suburb:"Kangaroo Point"},
+{name:"The Fox Hotel",lat:-27.4735,lng:153.0355,price:13.50,suburb:"Woolloongabba"},
+{name:"The Normanby Hotel",lat:-27.4592855,lng:153.0116719,price:14.50,suburb:"Red Hill"},
+{name:"Pig 'N' Whistle",lat:-27.4754477,lng:153.0166823,price:12.00,suburb:"CBD"}
 
 var pubs_key = "beerspyPubs";
 
@@ -121,7 +129,7 @@ var pubs = loadpubs();
 
 function getPinColor(p){
   if(p<8) return '#4fae63';
-  if(p<=10) return '#dd9f34';
+  if(p<10) return '#dd9f34';
   return '#d1543a';
 }
 
@@ -143,8 +151,8 @@ function refreshStats(extra){
   var range=(hi-lo).toFixed(2);
 
   var blocks=[
-    {num:'$'+avg,label:'Brisbane Average'},
-    {num:'$'+lo,label:'Cheapest Found'},
+    {num:'$'+avg,label:'Average'},
+    {num:'$'+lo,label:'Cheapest'},
     {num:pubs.length,label:'Venues Tracked'},
     {num:'$'+range,label:'Price Range'}
   ];
@@ -199,7 +207,7 @@ function drawPins(heroes){
 
     var distTxt=pub._dist!=null ? pub._dist.toFixed(1)+' km away' : '';
     var mk=L.marker([pub.lat,pub.lng],{icon:icon}).addTo(map);
-    mk.bindPopup('<div class="popup-title">'+pub.name+'</div><div class="popup-price">$'+pub.price.toFixed(2)+'</div><div class="popup-meta">'+pub.beer+' · '+pub.suburb+(distTxt?' · '+distTxt:'')+'</div>');
+    mk.bindPopup('<div class="popup-title">'+pub.name+'</div><div class="popup-price">$'+pub.price.toFixed(2)+'</div><div class="popup-meta">'+pub.suburb+(distTxt?' · '+distTxt:'')+'</div>');
     mk.on('click',function(){ if(crawlOn) toggleCrawl(pub) });
     pubMarkers.push(mk);
     bounds.push([pub.lat,pub.lng]);
