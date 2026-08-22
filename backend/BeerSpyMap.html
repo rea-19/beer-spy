@@ -111,7 +111,7 @@ function loadpubs(){
 
 function savePubs(list){
   var clean = list.map(function(p){
-    return {name:p.name, lat:p.lat, lng:p.lng, price:p.price, beer:p.beer, suburb:p.suburb};
+    return {name:p.name, lat:p.lat, lng:p.lng, price:p.price, suburb:p.suburb};
   });
   localStorage.setItem(pubs_key, JSON.stringify(clean));
 }
